@@ -39,6 +39,7 @@
     }
     if (seg[0] === 'sets') return { nom: 'setlists', params: q };
     if (seg[0] === 'reglages') return { nom: 'reglages', params: q };
+    if (seg[0] === 'accordeur') return { nom: 'accordeur', params: q };
     if (seg[0] === 'aide') { q.onglet = seg[1] || 'ecrire'; return { nom: 'aide', params: q }; }
     if (seg[0] === 'nouveau') return { nom: 'editeur', params: { id: 'new' } };
     return { nom: 'bib', params: q };
@@ -47,6 +48,8 @@
   function naviguer() {
     arreterDefilement();
     arreterMetronome();
+    sortirScene();
+    if (window.Accordeur) Accordeur.arreter();
     route = parseHash();
     (Vues[route.nom] || Vues.bib)();
     majTopbar();
@@ -61,6 +64,8 @@
     };
     document.getElementById('topnav').innerHTML = route.nom === 'bib'
       ? '<a class="tbtn" href="#/sets">Setlists</a>' +
+        '<a class="tbtn" href="#/accordeur" title="Accordeur">' +
+        '<span class="long">Accordeur</span><span class="court">♪</span></a>' +
         '<a class="tbtn" href="#/aide" title="Mode d’emploi">' +
         '<span class="long">Mode d’emploi</span><span class="court">?</span></a>' +
         '<a class="tbtn" href="#/reglages" title="Réglages">⚙</a>'
@@ -297,7 +302,9 @@
       ['imprimer', 'Imprimer / PDF'],
       ['dupliquer', 'Dupliquer'],
       ['figer', 'Figer la transposition (' + (steps > 0 ? '+' : '') + steps + ')'],
-      ['proposer', 'Proposer au répertoire du groupe']
+      ['proposer', 'Proposer au répertoire du groupe'],
+      ['accordeur', 'Accordeur'],
+      ['scene', 'Mode scène']
     ];
     if (!K.estGroupe(s)) items.push(['supprimer', 'Supprimer']);
 
@@ -345,6 +352,10 @@
           naviguer();
         } else if (a === 'proposer') {
           proposerAuGroupe(s);
+        } else if (a === 'accordeur') {
+          go('#/accordeur');
+        } else if (a === 'scene') {
+          entrerScene();
         } else if (a === 'supprimer') {
           if (!confirm('Supprimer « ' + (s.titre || 'Sans titre') + ' » ? C’est définitif sur cet appareil.')) return;
           state.chansons = state.chansons.filter(function (x) { return x.id !== s.id; });
@@ -385,6 +396,61 @@
     }
     var ok = await K.copier(json);
     toast(ok ? 'JSON copié — colle-le dans repertoire.json.' : 'Copie impossible.');
+  }
+
+
+  /* ------------------------------------------------------------- mode scène */
+
+  var verrou = null;
+
+  function garderEcranAllume() {
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (v) { verrou = v; }).catch(function () {});
+  }
+  // Un passage en arrière-plan relâche le verrou : il faut le reprendre.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && document.body.classList.contains('scene')) {
+      garderEcranAllume();
+    }
+  });
+
+  function entrerScene() {
+    if (document.body.classList.contains('scene')) return;
+    document.body.classList.add('scene');
+    garderEcranAllume();
+
+    var barre = document.createElement('div');
+    barre.id = 'scene-barre';
+    barre.innerHTML =
+      '<button data-s="sortir">✕ quitter</button>' +
+      '<button data-s="defiler">▶ défiler</button>' +
+      '<button data-s="moins">A−</button>' +
+      '<button data-s="plus">A+</button>';
+    document.body.appendChild(barre);
+
+    barre.querySelectorAll('[data-s]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.s;
+        if (a === 'sortir') sortirScene();
+        else if (a === 'defiler') {
+          basculerDefilement();
+          b.textContent = defil.on ? '⏸ pause' : '▶ défiler';
+        } else if (a === 'moins' || a === 'plus') {
+          state.reglages.taille = clamp(state.reglages.taille + (a === 'plus' ? 1 : -1), 12, 34);
+          K.save();
+          appliquerReglages();
+        }
+      };
+    });
+  }
+
+  function sortirScene() {
+    if (!document.body.classList.contains('scene')) return;
+    arreterDefilement();
+    document.body.classList.remove('scene');
+    var b = document.getElementById('scene-barre');
+    if (b) b.remove();
+    if (verrou) { try { verrou.release(); } catch (e) {} verrou = null; }
   }
 
   /* ------------------------------------------------------------- défilement & métronome */

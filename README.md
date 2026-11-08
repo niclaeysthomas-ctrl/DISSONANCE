@@ -61,12 +61,15 @@ personne n'ait besoin de passer par GitHub.
 - **Défilement automatique** à vitesse réglable, pour jouer sans lâcher
   l'instrument.
 - **Métronome** au tempo de la chanson.
-- **Setlists** ordonnées, avec précédent / suivant pendant le concert.
+- **Setlists** ordonnées, avec précédent / suivant pendant le concert, et
+  partageables par lien comme une chanson.
 - **Pistes audio** : enregistrement au micro (décompte de 4 temps, clic du
   métronome en option, vumètre), import de fichiers, étiquettes, repères posés
   dans la prise, lecture ralentie **sans changer la hauteur**.
 - **Version de référence** par chanson, déposée dans [`audio/`](audio/) :
   tout le groupe l'entend dans l'app, et peut la garder hors-ligne.
+- **Accordeur** intégré : il écoute la corde et dit de combien tu es à côté.
+- **Mode scène** : paroles en grand, écran qui ne s'éteint pas.
 - **Impression** propre en A4 pour les pupitres.
 - **Hors-ligne** complet, et **export / import** en `.json` pour les sauvegardes.
 
@@ -138,7 +141,8 @@ réparable dans cinq ans.
 | `views.js` | Routeur, bibliothèque, écran de lecture, défilement, métronome |
 | `views2.js` | Éditeur, setlists, réglages, aide, import |
 | `audio.js` | Pistes : stockage IndexedDB, enregistrement micro, formats |
-| `views3.js` | Panneau des pistes, enregistreur, lecteur |
+| `views3.js` | Panneau des pistes, enregistreur, lecteur, fiche d'accord |
+| `accordeur.js` | Détection de hauteur et écran de l'accordeur |
 | `boot.js` | Démarrage, répertoire du groupe, service worker |
 | `repertoire.json` | Le répertoire partagé |
 | `audio/` | Les versions de référence du groupe |

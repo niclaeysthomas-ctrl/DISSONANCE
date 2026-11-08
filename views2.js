@@ -219,7 +219,8 @@
         }).join('') + '</ul>'
       : '<p class="indic">Toutes tes chansons sont déjà dedans.</p>';
 
-    h += '<p class="centre"><button class="btn danger" id="suppr-set">Supprimer la setlist</button></p>';
+    h += '<p class="centre"><button class="btn" id="part-set">Partager la setlist</button> ' +
+      '<button class="btn danger" id="suppr-set">Supprimer la setlist</button></p>';
     app.innerHTML = h;
 
     var nom = document.getElementById('nom-set');
@@ -240,6 +241,17 @@
     app.querySelectorAll('[data-add]').forEach(function (b) {
       b.onclick = function () { l.chansons.push(b.dataset.add); K.save(); Vues.setlist(); };
     });
+    document.getElementById('part-set').onclick = async function () {
+      if (!l.chansons.length) { toast('Setlist vide.'); return; }
+      // La setlist voyage avec ses chansons : sinon elle arrive vide chez l'autre.
+      var dedans = l.chansons.map(K.trouver).filter(Boolean).map(K.nettoyer);
+      var url = await K.lienPartage({ v: 1, setlist: { nom: l.nom, date: l.date }, chansons: dedans });
+      if (url.length > 30000) { toast('Trop de morceaux pour un lien : passe par l’export .json.'); return; }
+      var r = await K.partager(l.nom, 'Setlist : ' + l.nom, url);
+      if (r === 'copie') toast('Lien copié — colle-le dans la conversation du groupe.');
+      if (r === 'echec') prompt('Copie ce lien :', url);
+    };
+
     document.getElementById('suppr-set').onclick = function () {
       if (!confirm('Supprimer la setlist « ' + l.nom + ' » ? Les chansons, elles, restent.')) return;
       state.setlists = state.setlists.filter(function (x) { return x.id !== l.id; });
@@ -383,12 +395,21 @@
     K.depaqueter(code).then(function (d) {
       var liste = (d && d.chansons) || [];
       if (!liste.length) throw new Error('vide');
-      var h = '<h1 class="h1">On t’a partagé ' + (liste.length > 1 ? liste.length + ' chansons' : 'une chanson') + '</h1>';
+      var setl = d && d.setlist;
+      var h = '<h1 class="h1">' + (setl
+        ? 'On t’a partagé une setlist'
+        : 'On t’a partagé ' + (liste.length > 1 ? liste.length + ' chansons' : 'une chanson')) + '</h1>';
+      if (setl) {
+        h += '<p class="aide"><b>' + esc(setl.nom || 'Sans nom') + '</b>' +
+          (setl.date ? ' · ' + esc(setl.date) : '') + ' — ' + liste.length + ' titre' +
+          (liste.length > 1 ? 's' : '') + ', dans l’ordre.</p>';
+      }
       h += '<ul class="liste">' + liste.map(function (s) {
         return '<li><span class="t">' + esc(s.titre || 'Sans titre') + '</span>' +
           '<span class="m">' + [s.auteur, s.cle ? 'en ' + s.cle : '', s.bpm ? s.bpm + ' bpm' : ''].filter(Boolean).map(esc).join(' · ') + '</span></li>';
       }).join('') + '</ul>';
-      h += '<p class="centre"><button class="btn primaire" id="ok-imp">Ajouter à mon carnet</button> ' +
+      h += '<p class="centre"><button class="btn primaire" id="ok-imp">' +
+        (setl ? 'Ajouter la setlist' : 'Ajouter à mon carnet') + '</button> ' +
         '<a class="btn" href="#/">Non merci</a></p>';
       h += '<details class="apercu-import"><summary>Voir avant d’ajouter</summary>' +
         liste.map(function (s) {
@@ -397,6 +418,23 @@
       app.innerHTML = h;
       document.getElementById('ok-imp').onclick = function () {
         var n = fusionner({ chansons: liste });
+        if (setl) {
+          var ids = liste.map(function (c) {
+            var m = state.chansons.filter(function (x) {
+              return (x.titre || '') === (c.titre || '') && (x.contenu || '') === (c.contenu || '');
+            })[0];
+            return m ? m.id : null;
+          }).filter(Boolean);
+          var nouvelle = {
+            id: K.uid(), nom: setl.nom || 'Setlist partagée',
+            date: setl.date || '', chansons: ids, notes: ''
+          };
+          state.setlists.push(nouvelle);
+          K.save();
+          toast('Setlist ajoutée' + (n ? ' avec ' + n + ' nouvelle(s) chanson(s).' : '.'));
+          go('#/l/' + nouvelle.id);
+          return;
+        }
         toast(n ? n + ' chanson(s) ajoutée(s).' : 'Déjà dans ton carnet.');
         go('#/');
       };
@@ -449,7 +487,11 @@
       'et les notes qu’on entend.</li>' +
       '<li><b>Capo</b> : indique la case dans la fiche. Le bouton <i>capo</i> bascule entre les accords qui sonnent et ceux que tu plaques réellement.</li>' +
       '<li><b>Défiler</b> : le défilement automatique, avec sa vitesse réglable, pour jouer sans lâcher l’instrument.</li>' +
-      '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue.</li>' +
+      '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue. ' +
+      'Le bouton <i>Partager la setlist</i> l’envoie entière, chansons comprises.</li>' +
+      '<li><b>Mode scène</b> (menu ⋯) : plus que les paroles, en grand, et l’écran qui ne s’éteint pas.</li>' +
+      '<li><b>Accordeur</b> : en haut de la bibliothèque, ou depuis le menu ⋯ d’une chanson. ' +
+      'Il écoute la corde et dit de combien tu es à côté. Rien n’est enregistré.</li>' +
       '<li><b>Pistes</b> : sous les paroles, enregistre une idée au micro ou dépose un fichier. ' +
       'Voir <a href="#/aide/partager">Partager au groupe</a> pour ce qui circule et ce qui reste ici.</li>' +
       '</ul>' +

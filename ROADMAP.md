@@ -80,13 +80,20 @@ sont maintenant toutes en ligne. Il y a de bonnes chances que ça suffise.
 
 ## 🎸 Étape 5 — Le confort de musicien
 
-Au fil de l'eau, par ordre d'utilité :
+Premier lot en ligne :
 
-- **Accordeur** intégré (micro + détection de hauteur).
+- ✅ **Accordeur** intégré. Détection par autocorrélation, avec le garde-fou
+  qui compte : on retient la période la plus courte parmi les sommets
+  équivalents, sinon l'octave du dessous est lue à la place de la note.
+  Juste au cent près sur les six cordes à vide.
+- ✅ **Mode scène** : plus que les paroles, en grand, l'écran qui reste allumé
+  (Wake Lock) et une barre flottante pour le défilement.
+- ✅ **Partage d'une setlist** par lien : elle part avec ses chansons et son
+  ordre.
+
+Reste à faire :
+
 - **Minutage de setlist** : la durée totale du concert se calcule toute seule.
-- **Mode scène** : gros texte, écran qui ne s'éteint pas, défilement calé sur
-  le tempo.
-- **Partage d'une setlist** par lien, comme une chanson.
 - **Qui fait quoi** : voix, solos, chœurs, notés sur la chanson.
 - **Historique** : revoir une version précédente d'un texte.
 - **Export PDF** du répertoire entier, pour le classeur.
