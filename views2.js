@@ -38,11 +38,15 @@
       '<button type="button" class="b" data-ed="accord">[ accord ]</button>' +
       '<button type="button" class="b" data-ed="partie">## partie</button>' +
       '<button type="button" class="b" data-ed="indic">&gt; indication</button>' +
+      '<button type="button" class="b" data-ed="feuille">Coller une feuille</button>' +
+      '<button type="button" class="b" data-ed="tap">♩ taper le tempo</button>' +
+      '<button type="button" class="b" data-ed="cle">Tonalité ?</button>' +
       '<div class="grow"></div>' +
       '<button type="button" class="b" data-ed="apercu">Aperçu</button>' +
       '<a class="b" href="#/aide" target="_self">Syntaxe ?</a>' +
       '</div>' +
       '<div class="palette" id="palette"></div>' +
+      '<div class="prop" id="prop" hidden></div>' +
       '<div class="zone-ed">' +
       '<textarea id="ta" spellcheck="true" placeholder="## Couplet 1&#10;[Am]Écris ta première ligne [F]ici&#10;[C]et les accords entre [G]crochets">' + esc(brouillon.contenu) + '</textarea>' +
       '<div class="apercu" id="apercu" hidden></div>' +
@@ -108,6 +112,16 @@
         if (a === 'accord') inserer('[§]', 1);
         else if (a === 'partie') inserer('\n## §\n', 4);
         else if (a === 'indic') inserer('\n> §\n', 3);
+        else if (a === 'feuille') collerFeuille(ta, form, majApercu);
+        else if (a === 'tap') taperTempo(b, form);
+        else if (a === 'cle') {
+          lire();
+          var devine = window.Conversion && Conversion.devinerTonalite(brouillon.contenu);
+          if (!devine) { toast('Pas assez d’accords pour trancher.'); return; }
+          form.cle.value = devine;
+          form.cle.dispatchEvent(new Event('input', { bubbles: true }));
+          toast('Tonalité : ' + devine + '. Corrige si je me trompe.');
+        }
         else if (a === 'apercu') {
           var ap = document.getElementById('apercu');
           ap.hidden = !ap.hidden;
@@ -126,6 +140,25 @@
     });
 
     ta.addEventListener('input', majApercu);
+
+    // Une feuille collée depuis ailleurs : on propose, on n'impose pas.
+    ta.addEventListener('paste', function () {
+      setTimeout(function () {
+        majApercu();
+        var prop = document.getElementById('prop');
+        if (!window.Conversion || !Conversion.ressembleAUneFeuille(ta.value)) { prop.hidden = true; return; }
+        prop.hidden = false;
+        prop.innerHTML = '<span>On dirait une feuille d’accords à l’ancienne. La convertir ?</span>' +
+          '<button type="button" class="b" id="prop-oui">Convertir</button>' +
+          '<button type="button" class="b" id="prop-non">Laisser</button>';
+        document.getElementById('prop-non').onclick = function () { prop.hidden = true; };
+        document.getElementById('prop-oui').onclick = function () {
+          appliquerConversion(Conversion.convertirFeuille(ta.value), ta, form);
+          prop.hidden = true;
+          majApercu();
+        };
+      }, 0);
+    });
     form.addEventListener('input', function (e) {
       if (e.target.name === 'cle') majPalette();
     });
@@ -150,6 +183,89 @@
 
     majPalette();
   };
+
+
+  /* ------------------------------------------------------------- coller une feuille */
+
+  /** Applique une conversion au brouillon, en ne remplissant que les cases vides. */
+  function appliquerConversion(res, ta, form) {
+    ta.value = res.texte;
+    if (res.meta.capo && !form.capo.value) form.capo.value = res.meta.capo;
+    if (res.meta.bpm && !form.bpm.value) form.bpm.value = res.meta.bpm;
+    if (res.meta.cle && !form.cle.value) form.cle.value = res.meta.cle;
+    if (!form.cle.value) {
+      var devine = Conversion.devinerTonalite(res.texte);
+      if (devine) form.cle.value = devine;
+    }
+    form.cle.dispatchEvent(new Event('input', { bubbles: true }));
+    var dit = [];
+    if (res.converties) dit.push(res.converties + ' ligne' + (res.converties > 1 ? 's' : '') + ' d’accords replacée' + (res.converties > 1 ? 's' : ''));
+    if (res.parties) dit.push(res.parties + ' partie' + (res.parties > 1 ? 's' : ''));
+    toast(dit.length ? dit.join(', ') + '. Relis quand même.' : 'Rien à convertir ici.');
+  }
+
+  function collerFeuille(ta, form, majApercu) {
+    var f = document.createElement('div');
+    f.className = 'feuille';
+    f.innerHTML = '<div class="voile"></div><div class="menu fiche large" style="text-align:left">' +
+      '<p class="mt">Coller une feuille d’accords</p>' +
+      '<p class="enr-txt">Le format courant : les accords sur une ligne, les paroles ' +
+      'juste en dessous. Colle tel quel — les accords retombent sur la bonne syllabe.</p>' +
+      '<textarea id="fe-brut" class="notes-set" placeholder="Am          F\nLa première ligne de la chanson"></textarea>' +
+      '<div id="fe-apercu"></div>' +
+      '<button class="btn primaire large" id="fe-ok" disabled>Convertir et insérer</button>' +
+      '<button class="annuler" id="fe-non">Annuler</button></div>';
+    document.body.appendChild(f);
+
+    var brut = document.getElementById('fe-brut');
+    var zone = document.getElementById('fe-apercu');
+    var ok = document.getElementById('fe-ok');
+    var fermer = function () { f.remove(); };
+    f.querySelector('.voile').onclick = fermer;
+    document.getElementById('fe-non').onclick = fermer;
+
+    function rafraichir() {
+      var t = brut.value;
+      if (!t.trim()) { zone.innerHTML = ''; ok.disabled = true; return; }
+      var res = Conversion.convertirFeuille(t);
+      ok.disabled = false;
+      zone.innerHTML = '<p class="fe-bilan">' +
+        (res.converties ? res.converties + ' ligne(s) d’accords replacée(s)' : 'aucune ligne d’accords repérée') +
+        (res.parties ? ' · ' + res.parties + ' partie(s)' : '') +
+        (res.meta.capo ? ' · capo ' + res.meta.capo : '') +
+        (res.meta.cle ? ' · en ' + esc(res.meta.cle) : '') + '</p>' +
+        '<div class="chanson apercu-fe">' + K.rendu({ contenu: res.texte, cle: res.meta.cle || '' }, 0) + '</div>';
+    }
+    brut.addEventListener('input', rafraichir);
+    brut.addEventListener('paste', function () { setTimeout(rafraichir, 0); });
+
+    ok.onclick = function () {
+      var res = Conversion.convertirFeuille(brut.value);
+      if (ta.value.trim()) res.texte = ta.value.replace(/\s+$/, '') + '\n\n' + res.texte;
+      appliquerConversion(res, ta, form);
+      fermer();
+      majApercu();
+    };
+    setTimeout(function () { brut.focus(); }, 50);
+  }
+
+  /** Quatre frappes en rythme valent mieux qu'un chiffre deviné. */
+  var frappes = [];
+  function taperTempo(bouton, form) {
+    var t = Date.now();
+    if (frappes.length && t - frappes[frappes.length - 1] > 2500) frappes = [];
+    frappes.push(t);
+    if (frappes.length < 2) { bouton.textContent = '♩ encore…'; return; }
+
+    var ecarts = [];
+    for (var i = 1; i < frappes.length; i++) ecarts.push(frappes[i] - frappes[i - 1]);
+    ecarts = ecarts.slice(-6).sort(function (a, b) { return a - b; });
+    var median = ecarts[Math.floor(ecarts.length / 2)];
+    var bpm = Math.round(60000 / median);
+    if (bpm < 30 || bpm > 260) { bouton.textContent = '♩ taper le tempo'; frappes = []; return; }
+    form.bpm.value = bpm;
+    bouton.textContent = '♩ ' + bpm + ' bpm';
+  }
 
   function champ(nom, label, val, type, ph) {
     return '<label class="champ"><span>' + esc(label) + '</span>' +
@@ -570,12 +686,21 @@
       regle('&gt;', 'Une indication', 'Une ligne qui commence par <code>&gt;</code> : nuance, arrangement, note pour le groupe.') +
       regle('Am F C G', 'Une grille', 'Une ligne faite uniquement d’accords est reconnue toute seule — pratique pour les intros.') +
       '</div>' +
+      '<div class="encart"><p><b>Tu as déjà la chanson écrite ailleurs ?</b> ' +
+      'Ne retape rien. Dans l’éditeur, <b>Coller une feuille</b> prend le format courant — ' +
+      'les accords sur une ligne, les paroles en dessous — et replace chaque accord ' +
+      'sur sa syllabe. Il récupère au passage le capo, le tempo et les titres de parties. ' +
+      'Un simple collage dans la zone de texte te le propose aussi.</p></div>' +
       '<h2 class="sect">Ce que ça donne</h2>' +
       '<div class="deux-col"><pre class="code">' + esc(exemple) + '</pre>' +
       '<div class="chanson">' + K.rendu({ contenu: exemple, cle: 'Am' }, 0) + '</div></div>' +
       '<h2 class="sect">Et ensuite</h2>' +
       '<ul class="puces">' +
       '<li><b>Transposer</b> : les boutons − et + en haut de la chanson. Ça ne touche pas au texte, c’est juste l’affichage. « Figer » dans le menu ⋯ réécrit pour de bon.</li>' +
+      '<li><b>Le tempo à l’oreille</b> : le bouton <i>♩ taper le tempo</i> — tu tapes quatre fois ' +
+      'en rythme, il remplit le bpm.</li>' +
+      '<li><b>La tonalité</b> : le bouton <i>Tonalité ?</i> la devine d’après les accords employés. ' +
+      'Elle sert à la palette d’accords et au choix dièses ou bémols.</li>' +
       '<li><b>Un accord qui t’échappe ?</b> Clique dessus, dans les paroles comme dans le ' +
       'bandeau du haut : la position s’affiche, jusqu’à trois façons de le plaquer, ' +
       'et les notes qu’on entend.</li>' +

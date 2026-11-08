@@ -45,6 +45,11 @@ Am  F  C  G
 | `> doucement` | Une indication pour le groupe (nuance, arrangement) |
 | `Am  F  C  G` | Une ligne d'accords seuls — reconnue toute seule |
 
+**Déjà écrite ailleurs ?** Ne retape rien : l'éditeur sait lire le format
+courant — les accords sur une ligne, les paroles en dessous — et replacer
+chaque accord sur sa syllabe (bouton *Coller une feuille*, ou simplement
+coller dans la zone de texte).
+
 L'aide est aussi dans l'app, en haut de l'écran : **Mode d'emploi**. Elle a deux
 onglets — *Écrire une chanson* pour la syntaxe, et *Partager au groupe* pour
 savoir qui voit quoi. Tout ce qui est expliqué ici est là-bas aussi, pour que
@@ -144,6 +149,7 @@ réparable dans cinq ans.
 | `audio.js` | Pistes : stockage IndexedDB, enregistrement micro, formats |
 | `views3.js` | Panneau des pistes, enregistreur, lecteur, fiche d'accord |
 | `accordeur.js` | Détection de hauteur et écran de l'accordeur |
+| `conversion.js` | Lecture des feuilles d'accords à l'ancienne, tonalité devinée |
 | `boot.js` | Démarrage, répertoire du groupe, service worker |
 | `repertoire.json` | Le répertoire partagé |
 | `audio/` | Les versions de référence du groupe |

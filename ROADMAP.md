@@ -106,6 +106,21 @@ Premier lot en ligne :
 
 ---
 
+## ✅ Hors étapes — ce qui lève les freins du quotidien
+
+- ✅ **Coller une feuille d'accords** écrite à l'ancienne : les accords sur une
+  ligne, les paroles en dessous. C'est le format de tout ce que le groupe a
+  déjà, et le retaper était le vrai frein à l'adoption.
+- ✅ **Taper le tempo** : quatre frappes en rythme remplissent le bpm.
+- ✅ **Deviner la tonalité** d'après les accords employés.
+
+Restent les suggestions non faites, par ordre d'utilité : **sauvegarde
+complète en .zip** (audio compris) avec rappel quand elle date, **capo
+suggéré** pour tomber sur des accords ouverts, **historique et corbeille**,
+**poser les accords au doigt** dans l'aperçu, **défilement calé sur la durée**,
+et un **échappement** pour qu'une ligne de paroles ne soit jamais prise pour
+une grille.
+
 ## Ce qu'il faudra trancher en chemin
 
 1. **Le dépôt reste-t-il public ?** Aujourd'hui oui, c'est ce qui rend Pages
