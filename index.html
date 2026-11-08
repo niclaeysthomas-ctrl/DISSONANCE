@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carnet — paroles &amp; accords</title>
+<meta name="description" content="Le carnet de chansons du groupe : paroles, accords, transposition, setlists. Fonctionne hors-ligne.">
+<meta name="theme-color" content="#12141a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header id="topbar">
+  <button class="icon-btn" id="btn-back" title="Retour" hidden>←</button>
+  <a class="brand" href="#/">
+    <img src="icons/icon-192.png" alt="" width="26" height="26">
+    <span>Carnet</span>
+  </a>
+  <div class="grow"></div>
+  <nav id="topnav"></nav>
+</header>
+
+<main id="app"></main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<template id="tpl-empty">
+  <div class="empty">
+    <p class="big"></p>
+    <p class="sub"></p>
+  </div>
+</template>
+
+<script src="chords.js"></script>
+<script src="app.js"></script>
+<script src="views.js"></script>
+<script src="views2.js"></script>
+<script src="boot.js"></script>
+</body>
+</html>

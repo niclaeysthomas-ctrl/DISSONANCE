@@ -1,0 +1,25 @@
+{
+  "_lisez_moi": "Le répertoire commun du groupe. Chaque entrée est une chanson. Pour en ajouter une : copie un bloc, change les valeurs, ouvre une pull request (ou colle-la depuis l'app : menu ⋯ → Proposer au répertoire). Les deux entrées ci-dessous sont des exemples — remplacez-les par vos morceaux.",
+  "chansons": [
+    {
+      "id": "exemple-le-dernier-train",
+      "titre": "Le dernier train (exemple)",
+      "auteur": "à remplacer",
+      "cle": "Am",
+      "bpm": "92",
+      "capo": 0,
+      "tags": ["exemple", "à remplacer"],
+      "contenu": "> exemple pour montrer la mise en page — effacez-le\n\n## Intro\nAm  F  C  G\n\n## Couplet 1\n[Am]Première ligne de la chanson qui [F]commence\n[C]et la deuxième qui répond à la [G]première\n[Am]Troisième ligne un peu plus [F]longue que les autres\n[C]puis on referme le couplet [G]ici\n\n## Refrain\n> plus fort, tout le monde\n[F]On chante le refrain [C]ensemble\n[G]et on le reprend [Am]deux fois\n[F]On chante le refrain [C]ensemble\n[G]jusqu'au bout de la [Am]nuit\n\n## Couplet 2\n[Am]Le deuxième couplet suit la [F]même grille\n[C]rien de plus simple à retenir en [G]répète\n\n## Pont\n> batterie seule 4 mesures, puis tout le monde\nDm  Am  E7  Am\n\n## Final\n[F]On ralentit [C]doucement\n[G]et on s'arrête [Am]là"
+    },
+    {
+      "id": "exemple-grille-blues",
+      "titre": "Grille de blues en E (exemple)",
+      "auteur": "traditionnel",
+      "cle": "E",
+      "bpm": "108",
+      "capo": 0,
+      "tags": ["exemple", "grille", "bœuf"],
+      "contenu": "> la grille de blues en 12 mesures — pour tester les diagrammes et le métronome\n\n## Grille (12 mesures)\nE7  E7  E7  E7\nA7  A7  E7  E7\nB7  A7  E7  B7\n\n## Tour final\nE7  E7  B7  B7\n\n> solo : deux tours chacun, on se regarde avant de revenir au thème"
+    }
+  ]
+}

@@ -1,0 +1,430 @@
+/* views2.js — éditeur, setlists, réglages, aide, import. */
+(function () {
+  'use strict';
+  var K = window.Carnet, C = window.Chords, V = window.VuesInternes;
+  var Vues = window.Vues = window.Vues || {};
+  var state = K.state, esc = K.esc, toast = K.toast, clamp = K.clamp;
+  var app = document.getElementById('app');
+  var go = V.go, vide = V.vide;
+
+  /* ------------------------------------------------------------- éditeur */
+
+  Vues.editeur = function () {
+    var p = V.route().params;
+    var creation = p.id === 'new';
+    var s = creation ? K.nouvelleChanson() : K.trouver(p.id);
+    if (!s) { app.innerHTML = vide('Chanson introuvable.', '<a href="#/">Retour au carnet</a>'); return; }
+    if (K.estGroupe(s)) {
+      app.innerHTML = vide('Chanson du répertoire du groupe.',
+        'Elle est en lecture seule ici. Ouvre-la et fais « Copier » pour en garder ta version.');
+      return;
+    }
+    var brouillon = Object.assign({}, s, { tags: (s.tags || []).slice() });
+
+    var h = '<form class="editeur" id="form-ed" autocomplete="off">' +
+      '<input class="champ-titre" name="titre" placeholder="Titre de la chanson" value="' + esc(brouillon.titre) + '">' +
+      '<div class="champs">' +
+      champ('auteur', 'Auteur · paroles', brouillon.auteur, 'text', 'Qui l’a écrite ?') +
+      champ('cle', 'Tonalité', brouillon.cle, 'text', 'Am, C, F#m…') +
+      champ('bpm', 'Tempo', brouillon.bpm, 'number', 'bpm') +
+      champ('capo', 'Capo', brouillon.capo || '', 'number', '0') +
+      champ('tags', 'Tags', (brouillon.tags || []).join(', '), 'text', 'concert, nouvelle, à finir') +
+      '</div>' +
+      '<div class="outils-ed">' +
+      '<button type="button" class="b" data-ed="accord">[ accord ]</button>' +
+      '<button type="button" class="b" data-ed="partie">## partie</button>' +
+      '<button type="button" class="b" data-ed="indic">&gt; indication</button>' +
+      '<div class="grow"></div>' +
+      '<button type="button" class="b" data-ed="apercu">Aperçu</button>' +
+      '<a class="b" href="#/aide" target="_self">Syntaxe ?</a>' +
+      '</div>' +
+      '<div class="palette" id="palette"></div>' +
+      '<div class="zone-ed">' +
+      '<textarea id="ta" spellcheck="true" placeholder="## Couplet 1&#10;[Am]Écris ta première ligne [F]ici&#10;[C]et les accords entre [G]crochets">' + esc(brouillon.contenu) + '</textarea>' +
+      '<div class="apercu" id="apercu" hidden></div>' +
+      '</div>' +
+      '<div class="actions-ed">' +
+      '<button type="submit" class="btn primaire">Enregistrer</button>' +
+      '<button type="button" class="btn" data-ed="annuler">Annuler</button>' +
+      '<div class="grow"></div>' +
+      (creation ? '' : '<button type="button" class="btn danger" data-ed="suppr">Supprimer</button>') +
+      '</div></form>';
+
+    app.innerHTML = h;
+    var ta = document.getElementById('ta');
+    var form = document.getElementById('form-ed');
+
+    function lire() {
+      var fd = new FormData(form);
+      brouillon.titre = (fd.get('titre') || '').trim();
+      brouillon.auteur = (fd.get('auteur') || '').trim();
+      brouillon.cle = (fd.get('cle') || '').trim();
+      brouillon.bpm = (fd.get('bpm') || '').toString().trim();
+      brouillon.capo = parseInt(fd.get('capo'), 10) || 0;
+      brouillon.tags = (fd.get('tags') || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+      brouillon.contenu = ta.value;
+    }
+
+    function majPalette() {
+      lire();
+      var pal = document.getElementById('palette');
+      var accords = diatoniques(brouillon.cle);
+      pal.innerHTML = accords.length
+        ? '<span class="pl">Accords de ' + esc(brouillon.cle) + ' :</span>' + accords.map(function (a) {
+            return '<button type="button" class="pa" data-ins="' + esc(a) + '">' + esc(a) + '</button>';
+          }).join('')
+        : '<span class="pl">Indique une tonalité pour avoir les accords sous la main.</span>';
+      pal.querySelectorAll('[data-ins]').forEach(function (b) {
+        b.onclick = function () { inserer('[' + b.dataset.ins + ']'); };
+      });
+    }
+
+    function inserer(txt, dedans) {
+      var d = ta.selectionStart, f = ta.selectionEnd;
+      var sel = ta.value.slice(d, f);
+      var ins = txt.replace('§', sel);
+      ta.value = ta.value.slice(0, d) + ins + ta.value.slice(f);
+      var pos = d + (dedans !== undefined ? dedans : ins.length);
+      ta.focus(); ta.setSelectionRange(pos, pos);
+      majApercu();
+    }
+
+    function majApercu() {
+      var ap = document.getElementById('apercu');
+      if (ap.hidden) return;
+      lire();
+      ap.innerHTML = '<div class="chanson">' + K.rendu(brouillon, 0) + '</div>';
+    }
+
+    app.querySelectorAll('[data-ed]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.ed;
+        if (a === 'accord') inserer('[§]', 1);
+        else if (a === 'partie') inserer('\n## §\n', 4);
+        else if (a === 'indic') inserer('\n> §\n', 3);
+        else if (a === 'apercu') {
+          var ap = document.getElementById('apercu');
+          ap.hidden = !ap.hidden;
+          b.classList.toggle('actif', !ap.hidden);
+          document.querySelector('.zone-ed').classList.toggle('double', !ap.hidden);
+          majApercu();
+        } else if (a === 'annuler') {
+          history.length > 1 ? history.back() : go('#/');
+        } else if (a === 'suppr') {
+          if (!confirm('Supprimer « ' + (s.titre || 'Sans titre') + ' » ? C’est définitif sur cet appareil.')) return;
+          state.chansons = state.chansons.filter(function (x) { return x.id !== s.id; });
+          state.setlists.forEach(function (l) { l.chansons = l.chansons.filter(function (x) { return x !== s.id; }); });
+          K.save(); toast('Supprimée.'); go('#/');
+        }
+      };
+    });
+
+    ta.addEventListener('input', majApercu);
+    form.addEventListener('input', function (e) {
+      if (e.target.name === 'cle') majPalette();
+    });
+
+    // Tab insère une tabulation plutôt que de sortir du champ.
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') { e.preventDefault(); inserer('    '); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      lire();
+      if (!brouillon.titre && !brouillon.contenu.trim()) { toast('Rien à enregistrer.'); return; }
+      brouillon.maj = Date.now();
+      if (creation) state.chansons.push(brouillon);
+      else Object.assign(s, brouillon);
+      K.save();
+      toast('Enregistré.');
+      go('#/s/' + encodeURIComponent(brouillon.id));
+    });
+
+    majPalette();
+  };
+
+  function champ(nom, label, val, type, ph) {
+    return '<label class="champ"><span>' + esc(label) + '</span>' +
+      '<input name="' + nom + '" type="' + type + '" value="' + esc(val) + '" placeholder="' + esc(ph || '') + '"' +
+      (type === 'number' ? ' inputmode="numeric"' : '') + '></label>';
+  }
+
+  // Les accords de la tonalité, pour les avoir à portée de clic.
+  function diatoniques(cle) {
+    var c = C.parse((cle || '').replace(/m$/, ''));
+    if (!c) return [];
+    var mineur = /m$/.test(cle || '');
+    var degres = mineur
+      ? [[0, 'm'], [2, 'dim'], [3, ''], [5, 'm'], [7, 'm'], [8, ''], [10, '']]
+      : [[0, ''], [2, 'm'], [4, 'm'], [5, ''], [7, ''], [9, 'm'], [11, 'dim']];
+    var flats = C.prefersFlats(cle, 0);
+    return degres.map(function (d) { return C.spell(c.root + d[0], flats) + d[1]; });
+  }
+
+  /* ------------------------------------------------------------- setlists */
+
+  Vues.setlists = function () {
+    var h = '<div class="rechbar"><h1 class="h1">Setlists</h1><button class="btn primaire" id="new-set">+ Setlist</button></div>';
+    if (!state.setlists.length) {
+      h += vide('Pas encore de setlist.', 'Une setlist, c’est l’ordre des morceaux pour une répétition ou un concert.');
+    } else {
+      h += '<ul class="liste">' + state.setlists.map(function (l) {
+        return '<li><a href="#/l/' + l.id + '"><span class="t">' + esc(l.nom) + '</span>' +
+          '<span class="m">' + l.chansons.length + ' titre' + (l.chansons.length > 1 ? 's' : '') +
+          (l.date ? ' · ' + esc(l.date) : '') + '</span></a></li>';
+      }).join('') + '</ul>';
+    }
+    app.innerHTML = h;
+    document.getElementById('new-set').onclick = function () {
+      var nom = prompt('Nom de la setlist ?', 'Répétition du ' + new Date().toLocaleDateString('fr-FR'));
+      if (!nom) return;
+      var l = { id: K.uid(), nom: nom.trim(), date: '', chansons: [], notes: '' };
+      state.setlists.push(l); K.save(); go('#/l/' + l.id);
+    };
+  };
+
+  Vues.setlist = function () {
+    var l = state.setlists.filter(function (x) { return x.id === V.route().params.id; })[0];
+    if (!l) { app.innerHTML = vide('Setlist introuvable.', '<a href="#/sets">Toutes les setlists</a>'); return; }
+
+    var h = '<div class="titre-ch"><h1 contenteditable="true" id="nom-set">' + esc(l.nom) + '</h1>' +
+      '<p class="meta"><input id="date-set" type="text" class="inline" placeholder="date ou lieu" value="' + esc(l.date || '') + '"></p></div>';
+
+    if (!l.chansons.length) {
+      h += vide('Setlist vide.', 'Ajoute des morceaux ci-dessous.');
+    } else {
+      h += '<ol class="setliste">' + l.chansons.map(function (id, i) {
+        var s = K.trouver(id);
+        var titre = s ? (s.titre || 'Sans titre') : 'Chanson supprimée';
+        var meta = s ? [s.cle ? 'en ' + s.cle : '', s.bpm ? s.bpm + ' bpm' : '', s.capo ? 'capo ' + s.capo : ''].filter(Boolean).join(' · ') : '';
+        return '<li><a class="t" href="#/s/' + encodeURIComponent(id) + '?set=' + l.id + '">' + esc(titre) +
+          (meta ? ' <span class="m">' + esc(meta) + '</span>' : '') + '</a>' +
+          '<span class="ord">' +
+          '<button data-up="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Monter">▲</button>' +
+          '<button data-down="' + i + '"' + (i === l.chansons.length - 1 ? ' disabled' : '') + ' title="Descendre">▼</button>' +
+          '<button data-del="' + i + '" title="Retirer">×</button></span></li>';
+      }).join('') + '</ol>';
+      h += '<p class="centre"><a class="btn primaire" href="#/s/' + encodeURIComponent(l.chansons[0]) + '?set=' + l.id + '">▶ Lancer la setlist</a></p>';
+    }
+
+    var dispo = K.toutes().filter(function (s) { return l.chansons.indexOf(s.id) === -1; })
+      .sort(function (a, b) { return (a.titre || '').localeCompare(b.titre || '', 'fr'); });
+    h += '<h2 class="sect">Ajouter</h2>';
+    h += dispo.length
+      ? '<ul class="liste compacte ajout">' + dispo.map(function (s) {
+          return '<li><button data-add="' + esc(s.id) + '"><span class="t">' + esc(s.titre || 'Sans titre') +
+            (K.estGroupe(s) ? ' <span class="badge">groupe</span>' : '') + '</span><span class="plus">+</span></button></li>';
+        }).join('') + '</ul>'
+      : '<p class="indic">Toutes tes chansons sont déjà dedans.</p>';
+
+    h += '<p class="centre"><button class="btn danger" id="suppr-set">Supprimer la setlist</button></p>';
+    app.innerHTML = h;
+
+    var nom = document.getElementById('nom-set');
+    nom.onblur = function () { l.nom = nom.textContent.trim() || 'Sans nom'; K.save(); };
+    nom.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); nom.blur(); } };
+    var dt = document.getElementById('date-set');
+    dt.onchange = function () { l.date = dt.value.trim(); K.save(); };
+
+    app.querySelectorAll('[data-up]').forEach(function (b) {
+      b.onclick = function () { var i = +b.dataset.up; echanger(l, i, i - 1); };
+    });
+    app.querySelectorAll('[data-down]').forEach(function (b) {
+      b.onclick = function () { var i = +b.dataset.down; echanger(l, i, i + 1); };
+    });
+    app.querySelectorAll('[data-del]').forEach(function (b) {
+      b.onclick = function () { l.chansons.splice(+b.dataset.del, 1); K.save(); Vues.setlist(); };
+    });
+    app.querySelectorAll('[data-add]').forEach(function (b) {
+      b.onclick = function () { l.chansons.push(b.dataset.add); K.save(); Vues.setlist(); };
+    });
+    document.getElementById('suppr-set').onclick = function () {
+      if (!confirm('Supprimer la setlist « ' + l.nom + ' » ? Les chansons, elles, restent.')) return;
+      state.setlists = state.setlists.filter(function (x) { return x.id !== l.id; });
+      K.state.setlists = state.setlists;
+      K.save(); go('#/sets');
+    };
+  };
+
+  function echanger(l, a, b) {
+    if (b < 0 || b >= l.chansons.length) return;
+    var t = l.chansons[a]; l.chansons[a] = l.chansons[b]; l.chansons[b] = t;
+    K.save(); Vues.setlist();
+  }
+
+  /* ------------------------------------------------------------- réglages */
+
+  Vues.reglages = function () {
+    var r = state.reglages;
+    var h = '<h1 class="h1">Réglages</h1>';
+    h += '<div class="bloc-reglage"><h2>Affichage</h2>' +
+      '<label class="ligne-reg">Thème ' +
+      '<select id="theme">' + [['auto', 'Automatique'], ['sombre', 'Sombre'], ['clair', 'Clair']].map(function (t) {
+        return '<option value="' + t[0] + '"' + (r.theme === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="ligne-reg">Taille du texte <input type="range" id="taille" min="12" max="34" value="' + r.taille + '"><span id="taille-val">' + r.taille + '</span></label>' +
+      '<label class="ligne-reg"><input type="checkbox" id="dia"' + (r.diagrammes ? ' checked' : '') + '> Diagrammes d’accords</label>' +
+      '</div>';
+
+    h += '<div class="bloc-reglage"><h2>Sauvegarde</h2>' +
+      '<p class="aide">Tes chansons vivent dans ce navigateur. Exporte de temps en temps — et partage le fichier au groupe.</p>' +
+      '<div class="rangee">' +
+      '<button class="btn" id="exp">Exporter tout (.json)</button>' +
+      '<button class="btn" id="imp">Importer un fichier</button>' +
+      '<button class="btn" id="lien-tout">Lien de partage du carnet</button>' +
+      '<input type="file" id="fichier" accept=".json,application/json" hidden>' +
+      '</div></div>';
+
+    h += '<div class="bloc-reglage"><h2>À propos</h2>' +
+      '<p class="aide">Carnet ' + K.VERSION + ' · ' + state.chansons.length + ' chanson(s) à toi, ' +
+      K.groupe.length + ' dans le répertoire du groupe.</p>' +
+      '<p class="aide"><a href="#/aide">Comment écrire une chanson →</a></p>' +
+      (K.depot ? '<p class="aide"><a href="https://github.com/' + esc(K.depot.owner) + '/' + esc(K.depot.repo) + '" target="_blank" rel="noopener">Le dépôt du groupe sur GitHub →</a></p>' : '') +
+      '<p class="aide">Installation : sur téléphone, « Ajouter à l’écran d’accueil ». L’app marche ensuite sans réseau, en répète comme en concert.</p>' +
+      '</div>';
+
+    h += '<div class="bloc-reglage danger-zone"><h2>Zone rouge</h2>' +
+      '<button class="btn danger" id="vider">Tout effacer sur cet appareil</button></div>';
+
+    app.innerHTML = h;
+
+    document.getElementById('theme').onchange = function () {
+      r.theme = this.value; K.save(); V.appliquerReglages();
+    };
+    var tr = document.getElementById('taille');
+    tr.oninput = function () {
+      r.taille = +tr.value; document.getElementById('taille-val').textContent = tr.value;
+      K.save(); V.appliquerReglages();
+    };
+    document.getElementById('dia').onchange = function () { r.diagrammes = this.checked; K.save(); };
+
+    document.getElementById('exp').onclick = function () {
+      K.telecharger('carnet-' + new Date().toISOString().slice(0, 10) + '.json',
+        JSON.stringify({ v: 1, exporte: new Date().toISOString(), chansons: state.chansons, setlists: state.setlists }, null, 2));
+    };
+    var fichier = document.getElementById('fichier');
+    document.getElementById('imp').onclick = function () { fichier.click(); };
+    fichier.onchange = function () {
+      var f = fichier.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var d = JSON.parse(fr.result);
+          var n = fusionner(d);
+          toast(n + ' chanson(s) importée(s).');
+          go('#/');
+        } catch (e) { toast('Fichier illisible.'); }
+      };
+      fr.readAsText(f);
+    };
+    document.getElementById('lien-tout').onclick = async function () {
+      var url = await K.lienPartage({ v: 1, chansons: state.chansons.map(K.nettoyer) });
+      if (url.length > 30000) { toast('Carnet trop gros pour un lien : passe par le fichier .json.'); return; }
+      var res = await K.partager('Mon carnet', 'Mes chansons', url);
+      if (res === 'copie') toast('Lien copié.');
+      if (res === 'echec') prompt('Copie ce lien :', url);
+    };
+    document.getElementById('vider').onclick = function () {
+      if (!confirm('Effacer toutes tes chansons et setlists de cet appareil ? Irréversible.')) return;
+      if (!confirm('Vraiment ? Pense à exporter avant.')) return;
+      state.chansons.length = 0; state.setlists.length = 0;
+      K.save(); toast('Carnet vidé.'); go('#/');
+    };
+  };
+
+  function fusionner(d) {
+    var liste = (d && d.chansons) || [];
+    var n = 0;
+    liste.forEach(function (c) {
+      if (!c || (!c.titre && !c.contenu)) return;
+      var doublon = state.chansons.some(function (x) {
+        return (x.titre || '').toLowerCase() === (c.titre || '').toLowerCase() && (x.contenu || '') === (c.contenu || '');
+      });
+      if (doublon) return;
+      state.chansons.push(K.nouvelleChanson(Object.assign(K.nettoyer(c), { titre: c.titre || 'Sans titre' })));
+      n++;
+    });
+    (d && d.setlists || []).forEach(function (l) {
+      if (!l || !l.nom) return;
+      if (state.setlists.some(function (x) { return x.nom === l.nom; })) return;
+      state.setlists.push({ id: K.uid(), nom: l.nom, date: l.date || '', chansons: [], notes: l.notes || '' });
+    });
+    K.save();
+    return n;
+  }
+
+  /* ------------------------------------------------------------- import par lien */
+
+  Vues.import = function () {
+    var code = V.route().params.id;
+    app.innerHTML = '<p class="indic">Lecture du lien…</p>';
+    K.depaqueter(code).then(function (d) {
+      var liste = (d && d.chansons) || [];
+      if (!liste.length) throw new Error('vide');
+      var h = '<h1 class="h1">On t’a partagé ' + (liste.length > 1 ? liste.length + ' chansons' : 'une chanson') + '</h1>';
+      h += '<ul class="liste">' + liste.map(function (s) {
+        return '<li><span class="t">' + esc(s.titre || 'Sans titre') + '</span>' +
+          '<span class="m">' + [s.auteur, s.cle ? 'en ' + s.cle : '', s.bpm ? s.bpm + ' bpm' : ''].filter(Boolean).map(esc).join(' · ') + '</span></li>';
+      }).join('') + '</ul>';
+      h += '<p class="centre"><button class="btn primaire" id="ok-imp">Ajouter à mon carnet</button> ' +
+        '<a class="btn" href="#/">Non merci</a></p>';
+      h += '<details class="apercu-import"><summary>Voir avant d’ajouter</summary>' +
+        liste.map(function (s) {
+          return '<h3>' + esc(s.titre || 'Sans titre') + '</h3><div class="chanson">' + K.rendu(s, 0) + '</div>';
+        }).join('') + '</details>';
+      app.innerHTML = h;
+      document.getElementById('ok-imp').onclick = function () {
+        var n = fusionner({ chansons: liste });
+        toast(n ? n + ' chanson(s) ajoutée(s).' : 'Déjà dans ton carnet.');
+        go('#/');
+      };
+    }).catch(function () {
+      app.innerHTML = vide('Lien illisible.', 'Il a peut-être été coupé en route. Demande qu’on te le renvoie en entier.');
+    });
+  };
+
+  /* ------------------------------------------------------------- aide */
+
+  Vues.aide = function () {
+    var exemple = [
+      '## Couplet 1',
+      '[Am]Le texte va comme ça, [F]l’accord tombe sur la syllabe',
+      '[C]où tu le places dans la [G]ligne',
+      '',
+      '## Refrain',
+      '> doucement, voix seule la première fois',
+      '[F]Refrain [C]refrain [G]refrain',
+      '',
+      '## Pont',
+      'Am  F  C  G'
+    ].join('\n');
+
+    app.innerHTML = '<h1 class="h1">Écrire une chanson</h1>' +
+      '<p class="aide">Quatre règles, et c’est tout.</p>' +
+      '<div class="regles">' +
+      regle('[Am]', 'Un accord', 'Entre crochets, collé à la syllabe où il tombe. <code>[Am]Le texte</code>.') +
+      regle('##', 'Une partie', 'Une ligne qui commence par <code>##</code> : couplet, refrain, pont, solo.') +
+      regle('&gt;', 'Une indication', 'Une ligne qui commence par <code>&gt;</code> : nuance, arrangement, note pour le groupe.') +
+      regle('Am F C G', 'Une grille', 'Une ligne faite uniquement d’accords est reconnue toute seule — pratique pour les intros.') +
+      '</div>' +
+      '<h2 class="sect">Ce que ça donne</h2>' +
+      '<div class="deux-col"><pre class="code">' + esc(exemple) + '</pre>' +
+      '<div class="chanson">' + K.rendu({ contenu: exemple, cle: 'Am' }, 0) + '</div></div>' +
+      '<h2 class="sect">Et ensuite</h2>' +
+      '<ul class="puces">' +
+      '<li><b>Transposer</b> : les boutons − et + en haut de la chanson. Ça ne touche pas au texte, c’est juste l’affichage. « Figer » dans le menu ⋯ réécrit pour de bon.</li>' +
+      '<li><b>Capo</b> : indique la case dans la fiche. Le bouton <i>capo</i> bascule entre les accords qui sonnent et ceux que tu plaques réellement.</li>' +
+      '<li><b>Partager</b> : menu ⋯ → <i>Partager un lien</i>. La chanson entière tient dans l’adresse, pas besoin de compte.</li>' +
+      '<li><b>Le répertoire du groupe</b> : les chansons communes, versionnées dans le dépôt. Menu ⋯ → <i>Proposer au répertoire</i>.</li>' +
+      '<li><b>Hors-ligne</b> : une fois l’app ouverte une fois, elle marche sans réseau. Ajoute-la à ton écran d’accueil.</li>' +
+      '</ul>' +
+      '<p class="centre"><a class="btn primaire" href="#/nouveau">Écrire une chanson</a></p>';
+  };
+
+  function regle(sym, titre, texte) {
+    return '<div class="regle"><code class="sym">' + sym + '</code><div><b>' + titre + '</b><p>' + texte + '</p></div></div>';
+  }
+})();
