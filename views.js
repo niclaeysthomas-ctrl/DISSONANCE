@@ -163,9 +163,11 @@
     if (s.cle) meta.push('en ' + esc(s.cle));
     if (s.capo) meta.push('capo ' + s.capo);
     if (s.bpm) meta.push(s.bpm + ' bpm');
+    var nbPistes = (window.PistesUI && PistesUI.comptes[s.id]) || 0;
     return '<li><a href="#/s/' + encodeURIComponent(s.id) + '">' +
       '<span class="t">' + esc(s.titre || 'Sans titre') +
-      (K.estGroupe(s) ? ' <span class="badge">groupe</span>' : '') + '</span>' +
+      (K.estGroupe(s) ? ' <span class="badge">groupe</span>' : '') +
+      (nbPistes ? ' <span class="badge audio">♪ ' + nbPistes + '</span>' : '') + '</span>' +
       (meta.length ? '<span class="m">' + meta.join(' · ') + '</span>' : '') +
       '</a><button class="fav' + (s.favori ? ' on' : '') + '" data-fav="' + esc(s.id) + '" title="Favori" aria-label="Favori">' +
       (s.favori ? '★' : '☆') + '</button></li>';
@@ -233,6 +235,7 @@
     }
 
     h += '<article class="chanson" id="corps">' + K.rendu(s, steps) + '</article>';
+    h += window.PistesUI ? PistesUI.panneau() : '';
 
     if (ctxSet && ctxSet.i >= 0) {
       var l2 = ctxSet.liste, i = ctxSet.i;
@@ -245,6 +248,7 @@
 
     app.innerHTML = h;
     brancherBarre(s, steps);
+    if (window.PistesUI) PistesUI.monter(s);
   }
 
   function brancherBarre(s, steps) {

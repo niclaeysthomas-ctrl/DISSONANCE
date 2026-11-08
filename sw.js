@@ -1,12 +1,13 @@
 /* sw.js — pour que l'app marche en cave, en van et sur scène.
    VERSION doit suivre celle des ?v= dans index.html : c'est ce qui livre
    les mises à jour au groupe. */
-const VERSION = '1.2.1';
+const VERSION = '1.3.0';
 const CACHE = 'carnet-v' + VERSION;
 const COQUILLE = [
   './', './index.html',
   './styles.css?v=' + VERSION, './chords.js?v=' + VERSION, './app.js?v=' + VERSION,
-  './views.js?v=' + VERSION, './views2.js?v=' + VERSION, './boot.js?v=' + VERSION,
+  './views.js?v=' + VERSION, './views2.js?v=' + VERSION, './audio.js?v=' + VERSION,
+  './views3.js?v=' + VERSION, './boot.js?v=' + VERSION,
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
   './icons/maskable-512.png', './icons/apple-touch-icon.png'
 ];

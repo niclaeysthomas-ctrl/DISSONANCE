@@ -61,6 +61,9 @@ personne n'ait besoin de passer par GitHub.
   l'instrument.
 - **Métronome** au tempo de la chanson.
 - **Setlists** ordonnées, avec précédent / suivant pendant le concert.
+- **Pistes audio** : enregistrement au micro (décompte de 4 temps, clic du
+  métronome en option, vumètre), import de fichiers, étiquettes, repères posés
+  dans la prise, lecture ralentie **sans changer la hauteur**.
 - **Impression** propre en A4 pour les pupitres.
 - **Hors-ligne** complet, et **export / import** en `.json` pour les sauvegardes.
 
@@ -95,6 +98,12 @@ Le format d'une entrée :
 
 Attention aux `\n` : dans du JSON, les retours à la ligne s'écrivent comme ça.
 
+## Et les pistes audio ?
+
+Au même endroit, en pire : dans le navigateur (IndexedDB), et **pas dans
+l'export `.json`** — ce sont des fichiers, pas du texte. Pour garder une prise,
+il faut l'exporter une par une (menu ⋯ de la piste). Compter ~1 Mo la minute.
+
 ## Où sont mes chansons ?
 
 Dans le navigateur de ton téléphone (`localStorage`), pas sur un serveur. Donc :
@@ -125,6 +134,8 @@ réparable dans cinq ans.
 | `app.js` | Données, sauvegarde, analyse du texte, rendu, partage |
 | `views.js` | Routeur, bibliothèque, écran de lecture, défilement, métronome |
 | `views2.js` | Éditeur, setlists, réglages, aide, import |
+| `audio.js` | Pistes : stockage IndexedDB, enregistrement micro, formats |
+| `views3.js` | Panneau des pistes, enregistreur, lecteur |
 | `boot.js` | Démarrage, répertoire du groupe, service worker |
 | `repertoire.json` | Le répertoire partagé |
 

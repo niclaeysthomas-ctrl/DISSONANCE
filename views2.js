@@ -277,6 +277,12 @@
       '<input type="file" id="fichier" accept=".json,application/json" hidden>' +
       '</div></div>';
 
+    h += '<div class="bloc-reglage" id="bloc-audio"><h2>Pistes audio</h2>' +
+      '<p class="aide" id="poids-audio">Calcul de la place occupée…</p>' +
+      '<p class="aide"><b>Les pistes ne sont pas dans l’export .json.</b> Ce sont des fichiers, ' +
+      'pas du texte : pour en sauvegarder une, ouvre la chanson, menu ⋯ de la piste → ' +
+      '<i>Exporter le fichier</i>.</p></div>';
+
     h += '<div class="bloc-reglage"><h2>À propos</h2>' +
       '<p class="aide">Carnet ' + K.VERSION + ' · ' + state.chansons.length + ' chanson(s) à toi, ' +
       K.groupe.length + ' dans le répertoire du groupe.</p>' +
@@ -289,6 +295,19 @@
       '<button class="btn danger" id="vider">Tout effacer sur cet appareil</button></div>';
 
     app.innerHTML = h;
+
+    if (window.Pistes) {
+      Promise.all([Pistes.toutes(), Pistes.poidsTotal()]).then(function (r) {
+        var el = document.getElementById('poids-audio');
+        if (!el) return;
+        el.innerHTML = r[0].length
+          ? r[0].length + ' piste(s), ' + Pistes.poids(r[1]) + ' sur cet appareil.'
+          : 'Aucune piste enregistrée pour l’instant.';
+      }).catch(function () {
+        var el = document.getElementById('poids-audio');
+        if (el) el.textContent = 'Stockage audio indisponible sur ce navigateur.';
+      });
+    }
 
     document.getElementById('theme').onchange = function () {
       r.theme = this.value; K.save(); V.appliquerReglages();
@@ -428,6 +447,8 @@
       '<li><b>Capo</b> : indique la case dans la fiche. Le bouton <i>capo</i> bascule entre les accords qui sonnent et ceux que tu plaques réellement.</li>' +
       '<li><b>Défiler</b> : le défilement automatique, avec sa vitesse réglable, pour jouer sans lâcher l’instrument.</li>' +
       '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue.</li>' +
+      '<li><b>Pistes</b> : sous les paroles, enregistre une idée au micro ou dépose un fichier. ' +
+      'Voir <a href="#/aide/partager">Partager au groupe</a> pour ce qui circule et ce qui reste ici.</li>' +
       '</ul>' +
       '<p class="centre"><a class="btn primaire" href="#/nouveau">Écrire une chanson</a> ' +
       '<a class="btn" href="#/aide/partager">Comment on partage →</a></p>';
@@ -447,6 +468,7 @@
       ligneTab('Le lien de l’app', 'Le répertoire du groupe, rien de personnel', 'Elles arrivent toutes seules') +
       ligneTab('Un lien de chanson<br><span class="pt">menu ⋯ → Partager un lien</span>', 'Cette chanson-là, recopiée chez eux', 'Non — leur copie est figée') +
       ligneTab('Le répertoire du groupe<br><span class="pt">le fichier repertoire.json</span>', 'Tout ce que tu y mets', 'Elles arrivent toutes seules') +
+      ligneTab('Une piste audio<br><span class="pt">⋯ → Exporter le fichier</span>', 'Le fichier, envoyé à la main', 'Non — c’est une copie') +
       '</tbody></table></div>';
 
     h += '<h2 class="sect">Envoyer une chanson à quelqu’un</h2>' +
@@ -470,7 +492,24 @@
       '<i>par n’importe qui sur internet</i>, pas seulement par nous. ' +
       'Pour un morceau pas fini ou qu’on garde pour soi, reste sur le lien de chanson à chanson.</p></div>';
 
-    h += '<h2 class="sect">L’installer, et jouer sans réseau</h2>' +
+    h += '<h2 class="sect">Les pistes audio</h2>' +
+      '<p class="aide">Sous les paroles, chaque chanson a ses <b>pistes</b> : une idée fredonnée, ' +
+      'une maquette, un bout de répète. Deux façons d’en ajouter — <b>🎙 Enregistrer</b> ' +
+      '(décompte de quatre temps, clic du métronome en option, vumètre pendant la prise) ' +
+      'ou <b>Importer</b> un fichier déjà sur l’appareil.</p>' +
+      '<ul class="puces">' +
+      '<li>À la lecture, le bouton <b>×1</b> descend à ×0,75 puis ×0,5 <b>sans changer la hauteur</b> : ' +
+      'de quoi repiquer un passage à l’oreille.</li>' +
+      '<li>Le bouton <b>⚑</b> pose un repère à l’endroit où tu es — « Refrain », « le solo » — ' +
+      'et un clic dessus y retourne. Clic droit (ou appui long) sur un repère pour l’enlever.</li>' +
+      '<li>Étiquette chaque prise : <i>idée · maquette · répète · live · référence</i>.</li>' +
+      '</ul>' +
+      '<div class="encart attention"><p><b>Une piste ne voyage pas toute seule.</b> ' +
+      'Un fichier audio ne rentre pas dans un lien, et il <b>n’est pas dans l’export .json</b>. ' +
+      'Pour en faire écouter une : menu <b>⋯</b> de la piste → <i>Exporter le fichier</i>, ' +
+      'puis envoie-le comme n’importe quel fichier. Compte à peu près <b>1 Mo la minute</b>.</p></div>' +
+
+      '<h2 class="sect">L’installer, et jouer sans réseau</h2>' +
       '<ul class="puces">' +
       '<li>Ouvre le lien, puis dans le menu du navigateur : <b>« Ajouter à l’écran d’accueil »</b>. ' +
       'Ça devient une app, avec son icône.</li>' +

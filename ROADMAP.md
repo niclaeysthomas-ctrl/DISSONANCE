@@ -15,12 +15,11 @@ par lien, répertoire commun versionné, hors-ligne complet, installable.
 
 ---
 
-## 🎙 Étape 1 — S'enregistrer dans l'app
+## ✅ Étape 1 — S'enregistrer dans l'app
 
-Le cœur de ce que tu demandes, et la partie la plus simple techniquement :
-le navigateur sait enregistrer le micro, on n'a besoin de personne.
+*En ligne.* Le navigateur sait enregistrer le micro, on n'a eu besoin de personne.
 
-- Bouton **micro** sur une chanson : décompte de 4 temps, puis ça tourne.
+- Bouton **micro** sur une chanson : décompte de 4 temps, vumètre, puis ça tourne.
 - Plusieurs prises par chanson, datées, renommables, supprimables.
 - Lecteur : lecture / pause, position, **vitesse ralentie** sans changer la
   hauteur (pour repiquer un passage).
@@ -34,7 +33,9 @@ c'est sur ton téléphone, donc à exporter de temps en temps.
 
 ---
 
-## 📂 Étape 2 — Importer et ranger l'audio
+## ✅ Étape 2 — Importer et ranger l'audio
+
+*En ligne.*
 
 - Déposer un fichier existant (`.m4a`, `.mp3`, `.wav`) depuis le téléphone ou
   l'ordi : la maquette du studio, un enregistrement de répète.
@@ -45,6 +46,10 @@ c'est sur ton téléphone, donc à exporter de temps en temps.
 ---
 
 ## 📨 Étape 3 — Faire circuler l'audio, sans serveur
+
+*Prochaine étape.* L'export d'une piste en fichier marche déjà ; ce qui manque,
+c'est la **version de référence déposée dans le dépôt**, que tout le monde aurait
+sans rien faire.
 
 - **Exporter une prise** en fichier : ça part dans la conversation du groupe.
 - **Version de référence dans le dépôt** : une ou deux par chanson, en format

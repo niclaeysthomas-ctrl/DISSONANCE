@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.2.1';
+  var VERSION = '1.3.0';
   var KEY = 'carnet.v1';
   var C = window.Chords;
 
