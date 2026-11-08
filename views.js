@@ -207,11 +207,13 @@
     if (cle) meta.push('<b>' + esc(cle) + '</b>');
     if (s.capo) meta.push('capo ' + s.capo);
     if (s.bpm) meta.push(s.bpm + ' bpm');
+    if (s.duree) meta.push(K.ecrireDuree(s.duree));
 
     var h = '';
     h += '<div class="titre-ch">' +
       '<h1>' + esc(s.titre || 'Sans titre') + (K.estGroupe(s) ? ' <span class="badge">groupe</span>' : '') + '</h1>' +
-      (meta.length ? '<p class="meta">' + meta.join(' · ') + '</p>' : '') + '</div>';
+      (meta.length ? '<p class="meta">' + meta.join(' · ') + '</p>' : '') +
+      (s.roles ? '<p class="roles">' + esc(s.roles) + '</p>' : '') + '</div>';
 
     h += '<div class="barre" id="barre">' +
       '<div class="grp"><button class="b" data-act="tr-" title="Baisser d’un demi-ton">−</button>' +

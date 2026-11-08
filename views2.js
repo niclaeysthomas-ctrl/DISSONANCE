@@ -28,8 +28,12 @@
       champ('cle', 'Tonalité', brouillon.cle, 'text', 'Am, C, F#m…') +
       champ('bpm', 'Tempo', brouillon.bpm, 'number', 'bpm') +
       champ('capo', 'Capo', brouillon.capo || '', 'number', '0') +
+      champ('duree', 'Durée', K.ecrireDuree(brouillon.duree), 'text', '3:45') +
       champ('tags', 'Tags', (brouillon.tags || []).join(', '), 'text', 'concert, nouvelle, à finir') +
       '</div>' +
+      '<label class="champ"><span>Qui fait quoi</span>' +
+      '<input name="roles" type="text" value="' + esc(brouillon.roles || '') + '" ' +
+      'placeholder="chant : … · solo : … · chœurs : …"></label>' +
       '<div class="outils-ed">' +
       '<button type="button" class="b" data-ed="accord">[ accord ]</button>' +
       '<button type="button" class="b" data-ed="partie">## partie</button>' +
@@ -61,6 +65,8 @@
       brouillon.cle = (fd.get('cle') || '').trim();
       brouillon.bpm = (fd.get('bpm') || '').toString().trim();
       brouillon.capo = parseInt(fd.get('capo'), 10) || 0;
+      brouillon.duree = K.lireDuree(fd.get('duree'));
+      brouillon.roles = (fd.get('roles') || '').trim();
       brouillon.tags = (fd.get('tags') || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
       brouillon.contenu = ta.value;
     }
@@ -189,8 +195,14 @@
     var l = state.setlists.filter(function (x) { return x.id === V.route().params.id; })[0];
     if (!l) { app.innerHTML = vide('Setlist introuvable.', '<a href="#/sets">Toutes les setlists</a>'); return; }
 
+    var mesure = minuter(l);
     var h = '<div class="titre-ch"><h1 contenteditable="true" id="nom-set">' + esc(l.nom) + '</h1>' +
-      '<p class="meta"><input id="date-set" type="text" class="inline" placeholder="date ou lieu" value="' + esc(l.date || '') + '"></p></div>';
+      '<p class="meta"><input id="date-set" type="text" class="inline" placeholder="date ou lieu" value="' + esc(l.date || '') + '"></p>' +
+      (l.chansons.length ? '<p class="meta">' + l.chansons.length + ' titre' + (l.chansons.length > 1 ? 's' : '') +
+        (mesure.total ? ' · <b>' + (mesure.manquantes ? 'au moins ' : '') + K.dureeLongue(mesure.total) + '</b>' : '') +
+        (mesure.manquantes ? ' · <span class="alerte">' + mesure.manquantes + ' sans durée</span>' : '') +
+        '</p>' : '') +
+      '</div>';
 
     if (!l.chansons.length) {
       h += vide('Setlist vide.', 'Ajoute des morceaux ci-dessous.');
@@ -198,7 +210,11 @@
       h += '<ol class="setliste">' + l.chansons.map(function (id, i) {
         var s = K.trouver(id);
         var titre = s ? (s.titre || 'Sans titre') : 'Chanson supprimée';
-        var meta = s ? [s.cle ? 'en ' + s.cle : '', s.bpm ? s.bpm + ' bpm' : '', s.capo ? 'capo ' + s.capo : ''].filter(Boolean).join(' · ') : '';
+        var d = s ? dureeDe(s) : null;
+        var meta = s ? [
+          s.cle ? 'en ' + s.cle : '', s.bpm ? s.bpm + ' bpm' : '', s.capo ? 'capo ' + s.capo : '',
+          d ? (d.estimee ? '~' : '') + K.ecrireDuree(d.sec) : ''
+        ].filter(Boolean).join(' · ') : '';
         return '<li><a class="t" href="#/s/' + encodeURIComponent(id) + '?set=' + l.id + '">' + esc(titre) +
           (meta ? ' <span class="m">' + esc(meta) + '</span>' : '') + '</a>' +
           '<span class="ord">' +
@@ -219,7 +235,12 @@
         }).join('') + '</ul>'
       : '<p class="indic">Toutes tes chansons sont déjà dedans.</p>';
 
-    h += '<p class="centre"><button class="btn" id="part-set">Partager la setlist</button> ' +
+    h += '<h2 class="sect">Notes de la soirée</h2>' +
+      '<textarea id="notes-set" class="notes-set" placeholder="qui annonce quoi, changements de guitare, à qui on dédie la dernière…">' +
+      esc(l.notes || '') + '</textarea>';
+
+    h += '<p class="centre"><button class="btn" id="impr-set">Imprimer la setlist</button> ' +
+      '<button class="btn" id="part-set">Partager la setlist</button> ' +
       '<button class="btn danger" id="suppr-set">Supprimer la setlist</button></p>';
     app.innerHTML = h;
 
@@ -241,6 +262,11 @@
     app.querySelectorAll('[data-add]').forEach(function (b) {
       b.onclick = function () { l.chansons.push(b.dataset.add); K.save(); Vues.setlist(); };
     });
+    var notes = document.getElementById('notes-set');
+    notes.onchange = function () { l.notes = notes.value; K.save(); };
+
+    document.getElementById('impr-set').onclick = function () { imprimer(l); };
+
     document.getElementById('part-set').onclick = async function () {
       if (!l.chansons.length) { toast('Setlist vide.'); return; }
       // La setlist voyage avec ses chansons : sinon elle arrive vide chez l'autre.
@@ -259,6 +285,74 @@
       K.save(); go('#/sets');
     };
   };
+
+
+  /** La durée d'un morceau : celle qu'on a saisie, sinon la plus longue prise. */
+  function dureeDe(s) {
+    if (s.duree) return { sec: s.duree, estimee: false };
+    var audio = window.PistesUI && PistesUI.durees[s.id];
+    if (audio) return { sec: Math.round(audio), estimee: true };
+    return null;
+  }
+
+  function minuter(l) {
+    var total = 0, manquantes = 0;
+    l.chansons.forEach(function (id) {
+      var s = K.trouver(id);
+      var d = s && dureeDe(s);
+      if (d) total += d.sec; else manquantes++;
+    });
+    return { total: total, manquantes: manquantes };
+  }
+
+  /** Le classeur du concert : la liste, puis chaque morceau sur sa page. */
+  function imprimer(l) {
+    var ancien = document.getElementById('impression');
+    if (ancien) ancien.remove();
+    var mesure = minuter(l);
+
+    var h = '<div class="page garde">' +
+      '<h1>' + esc(l.nom) + '</h1>' +
+      '<p class="sous">' + [l.date, l.chansons.length + ' titre' + (l.chansons.length > 1 ? 's' : ''),
+        mesure.total ? K.dureeLongue(mesure.total) : ''].filter(Boolean).map(esc).join(' · ') + '</p>' +
+      '<ol class="sommaire">' + l.chansons.map(function (id) {
+        var s = K.trouver(id);
+        if (!s) return '<li>—</li>';
+        var d = dureeDe(s);
+        return '<li><span>' + esc(s.titre || 'Sans titre') + '</span><span class="pt">' +
+          [s.cle ? 'en ' + s.cle : '', s.capo ? 'capo ' + s.capo : '', d ? K.ecrireDuree(d.sec) : '']
+            .filter(Boolean).map(esc).join(' · ') + '</span></li>';
+      }).join('') + '</ol>' +
+      (l.notes ? '<div class="notes-impr"><h3>Notes</h3><p>' + esc(l.notes).replace(/\n/g, '<br>') + '</p></div>' : '') +
+      '</div>';
+
+    l.chansons.forEach(function (id) {
+      var s = K.trouver(id);
+      if (!s) return;
+      var meta = [s.auteur, s.cle ? 'en ' + s.cle : '', s.capo ? 'capo ' + s.capo : '',
+        s.bpm ? s.bpm + ' bpm' : ''].filter(Boolean).join(' · ');
+      h += '<div class="page"><h2>' + esc(s.titre || 'Sans titre') + '</h2>' +
+        (meta ? '<p class="sous">' + esc(meta) + '</p>' : '') +
+        (s.roles ? '<p class="sous">' + esc(s.roles) + '</p>' : '') +
+        '<div class="chanson">' + K.rendu(s, s.transpose || 0) + '</div></div>';
+    });
+
+    var zone = document.createElement('div');
+    zone.id = 'impression';
+    zone.innerHTML = h;
+    document.body.appendChild(zone);
+    document.body.classList.add('mode-impression');
+
+    var nettoyer = function () {
+      document.body.classList.remove('mode-impression');
+      var z = document.getElementById('impression');
+      if (z) z.remove();
+      window.removeEventListener('afterprint', nettoyer);
+    };
+    window.addEventListener('afterprint', nettoyer);
+    setTimeout(function () { window.print(); }, 60);
+    setTimeout(nettoyer, 60000);   // filet, si afterprint ne vient jamais
+  }
 
   function echanger(l, a, b) {
     if (b < 0 || b >= l.chansons.length) return;
@@ -490,6 +584,10 @@
       '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue. ' +
       'Le bouton <i>Partager la setlist</i> l’envoie entière, chansons comprises.</li>' +
       '<li><b>Mode scène</b> (menu ⋯) : plus que les paroles, en grand, et l’écran qui ne s’éteint pas.</li>' +
+      '<li><b>Durée et rôles</b> : renseigne-les dans la fiche. La durée additionne le concert, ' +
+      'et « qui fait quoi » s’affiche sous le titre — et sur le papier.</li>' +
+      '<li><b>Imprimer la setlist</b> : une page de garde avec l’ordre, les tonalités et le minutage, ' +
+      'puis un morceau par page. Le classeur du concert.</li>' +
       '<li><b>Accordeur</b> : en haut de la bibliothèque, ou depuis le menu ⋯ d’une chanson. ' +
       'Il écoute la corde et dit de combien tu es à côté. Rien n’est enregistré.</li>' +
       '<li><b>Pistes</b> : sous les paroles, enregistre une idée au micro ou dépose un fichier. ' +

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.5.3';
+  var VERSION = '1.6.0';
   var KEY = 'carnet.v1';
   var C = window.Chords;
 
@@ -70,7 +70,7 @@
 
   function nouvelleChanson(p) {
     return Object.assign({
-      id: uid(), titre: '', auteur: '', cle: '', bpm: '', capo: 0,
+      id: uid(), titre: '', auteur: '', cle: '', bpm: '', capo: 0, duree: 0, roles: '',
       tags: [], transpose: 0, favori: false, contenu: '', maj: Date.now()
     }, p || {});
   }
@@ -204,6 +204,7 @@
     if (s.cle) meta.push('Tonalité : ' + s.cle);
     if (s.bpm) meta.push(s.bpm + ' bpm');
     if (s.capo) meta.push('Capo ' + s.capo);
+    if (s.duree) meta.push(ecrireDuree(s.duree));
     if (meta.length) l.push(meta.join(' · '));
     l.push('');
     l.push(s.contenu || '');
@@ -224,7 +225,35 @@
   }
 
   function nettoyer(s) {
-    return { titre: s.titre, auteur: s.auteur, cle: s.cle, bpm: s.bpm, capo: s.capo, tags: s.tags, contenu: s.contenu };
+    return {
+      titre: s.titre, auteur: s.auteur, cle: s.cle, bpm: s.bpm, capo: s.capo,
+      duree: s.duree || 0, roles: s.roles || '', tags: s.tags, contenu: s.contenu
+    };
+  }
+
+  /** « 3:45 », « 3min45 », « 225 » → 225 secondes. */
+  function lireDuree(t) {
+    t = String(t == null ? '' : t).trim();
+    if (!t) return 0;
+    var m = /^(\d+)\s*(?::|min|m|')\s*(\d{1,2})?$/i.exec(t);
+    if (m) return (+m[1]) * 60 + (+(m[2] || 0));
+    var n = parseInt(t, 10);
+    if (isNaN(n)) return 0;
+    return n < 30 ? n * 60 : n;   // « 4 » veut dire quatre minutes
+  }
+
+  function ecrireDuree(sec) {
+    sec = Math.round(sec || 0);
+    if (!sec) return '';
+    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  }
+
+  /** Pour un total de concert : « 42 min » plutôt que « 2520 s ». */
+  function dureeLongue(sec) {
+    sec = Math.round(sec || 0);
+    var m = Math.round(sec / 60);
+    if (m < 60) return m + ' min';
+    return Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0');
   }
 
   async function empaqueter(data) {
@@ -291,6 +320,7 @@
     esc: esc, uid: uid, clamp: clamp, toast: toast, dateFr: dateFr, trouver: trouver, toutes: toutes,
     estGroupe: estGroupe, nouvelleChanson: nouvelleChanson, versTexte: versTexte, nettoyer: nettoyer,
     empaqueter: empaqueter, depaqueter: depaqueter, lienPartage: lienPartage, copier: copier,
+    lireDuree: lireDuree, ecrireDuree: ecrireDuree, dureeLongue: dureeLongue,
     partager: partager, telecharger: telecharger, VERSION: VERSION,
     get groupe() { return groupe; },
     set groupe(v) { groupe = v; },

@@ -91,12 +91,18 @@ Premier lot en ligne :
 - ✅ **Partage d'une setlist** par lien : elle part avec ses chansons et son
   ordre.
 
-Reste à faire :
-
-- **Minutage de setlist** : la durée totale du concert se calcule toute seule.
+- ✅ **Minutage de setlist** : la durée se saisit sur la chanson, ou se devine
+  d'après la plus longue prise. Le total le dit quand il est incomplet —
+  « au moins 42 min · 2 sans durée » vaut mieux qu'un chiffre faux.
+- ✅ **Qui fait quoi** : une ligne sur la chanson, visible sous le titre et sur
+  le papier.
+- ✅ **Impression d'une setlist** : page de garde avec l'ordre et le minutage,
+  puis un morceau par page.
 - **Qui fait quoi** : voix, solos, chœurs, notés sur la chanson.
 - **Historique** : revoir une version précédente d'un texte.
-- **Export PDF** du répertoire entier, pour le classeur.
+- **Minutage fin** : le temps de parole entre les morceaux, pour caler un set
+  sur la durée imposée par la salle.
+- **Export PDF** du répertoire entier (la setlist, elle, s'imprime déjà).
 
 ---
 

@@ -61,8 +61,9 @@ personne n'ait besoin de passer par GitHub.
 - **Défilement automatique** à vitesse réglable, pour jouer sans lâcher
   l'instrument.
 - **Métronome** au tempo de la chanson.
-- **Setlists** ordonnées, avec précédent / suivant pendant le concert, et
-  partageables par lien comme une chanson.
+- **Setlists** ordonnées, avec précédent / suivant pendant le concert,
+  **minutage** du set, notes de la soirée, partage par lien, et **impression**
+  en classeur (page de garde + un morceau par page).
 - **Pistes audio** : enregistrement au micro (décompte de 4 temps, clic du
   métronome en option, vumètre), import de fichiers, étiquettes, repères posés
   dans la prise, lecture ralentie **sans changer la hauteur**.

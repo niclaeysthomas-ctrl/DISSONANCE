@@ -4,7 +4,7 @@
   var K = window.Carnet, P = window.Pistes;
   var esc = K.esc, toast = K.toast;
 
-  var UI = window.PistesUI = { comptes: {} };
+  var UI = window.PistesUI = { comptes: {}, durees: {} };
 
   /* ------------------------------------------------------------- lecteur */
 
@@ -628,7 +628,14 @@
   UI.Lecteur = Lec;
 
   // Les pastilles de la bibliothèque, chargées une fois au démarrage.
-  P.comptes().then(function (c) {
+  P.toutes().then(function (l) {
+    var c = {}, d = {};
+    l.forEach(function (p) {
+      c[p.chansonId] = (c[p.chansonId] || 0) + 1;
+      // Faute de durée saisie, la plus longue prise donne la mesure.
+      if ((p.duree || 0) > (d[p.chansonId] || 0)) d[p.chansonId] = p.duree;
+    });
+    UI.durees = d;
     UI.comptes = c;
     if (window.VuesInternes && VuesInternes.route().nom === 'bib') VuesInternes.naviguer();
   }).catch(function () {});
