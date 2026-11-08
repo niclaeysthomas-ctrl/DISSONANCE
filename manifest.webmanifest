@@ -1,7 +1,7 @@
 {
-  "name": "Carnet — paroles & accords",
-  "short_name": "Carnet",
-  "description": "Le carnet de chansons du groupe : paroles, accords, transposition, setlists. Fonctionne hors-ligne.",
+  "name": "DISSONANCE — paroles & accords",
+  "short_name": "DISSONANCE",
+  "description": "Le carnet de chansons de DISSONANCE : paroles, accords, transposition, setlists. Fonctionne hors-ligne.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

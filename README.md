@@ -1,11 +1,11 @@
-# Carnet — paroles & accords
+# DISSONANCE — paroles & accords
 
-Le carnet de chansons du groupe. Les paroles, les accords au bon endroit, la
+Le carnet de chansons de DISSONANCE. Les paroles, les accords au bon endroit, la
 transposition en un clic, les setlists de répèt' et de concert. Ça marche sur
 téléphone, ça s'installe comme une app, et **ça fonctionne sans réseau** — parce
 que les caves de répétition n'ont jamais eu de 4G.
 
-👉 **[Ouvrir le Carnet](https://niclaeysthomas-ctrl.github.io/carnet-accords/)**
+👉 **[Ouvrir le carnet](https://niclaeysthomas-ctrl.github.io/carnet-accords/)**
 
 ## Pour les copains du groupe
 
@@ -127,6 +127,18 @@ réparable dans cinq ans.
 | `views2.js` | Éditeur, setlists, réglages, aide, import |
 | `boot.js` | Démarrage, répertoire du groupe, service worker |
 | `repertoire.json` | Le répertoire partagé |
+
+## Mettre l'app à jour
+
+Les fichiers sont appelés avec un `?v=` dans `index.html`, et `sw.js` porte le
+même numéro. **Les deux doivent rester synchronisés** : c'est ce qui fait que
+le groupe reçoit vraiment la nouvelle version au lieu de garder l'ancienne en
+cache. Un changement de code = on monte le numéro aux deux endroits.
+
+## La suite
+
+Ce qui est prévu, et dans quel ordre : [ROADMAP.md](ROADMAP.md) — enregistrement
+audio, pistes attachées aux chansons, accordeur, mode scène.
 
 ## Licence
 
