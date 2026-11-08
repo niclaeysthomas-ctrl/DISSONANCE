@@ -1,7 +1,7 @@
 /* sw.js — pour que l'app marche en cave, en van et sur scène.
    VERSION doit suivre celle des ?v= dans index.html : c'est ce qui livre
    les mises à jour au groupe. */
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const CACHE = 'carnet-v' + VERSION;
 const COQUILLE = [
   './', './index.html',
@@ -24,7 +24,11 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((noms) => Promise.all(noms.filter((n) => n !== CACHE).map((n) => caches.delete(n))))
+      // Le compte github.io héberge d'autres apps sur la même origine : on ne
+      // touche QUE nos propres caches, jamais les leurs.
+      .then((noms) => Promise.all(
+        noms.filter((n) => n.indexOf('carnet-') === 0 && n !== CACHE).map((n) => caches.delete(n))
+      ))
       .then(() => self.clients.claim())
   );
 });
