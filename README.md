@@ -56,7 +56,8 @@ personne n'ait besoin de passer par GitHub.
   menu ⋯ réécrit les accords pour de bon.
 - **Capo** : bascule entre les accords qui *sonnent* et ceux que tu *plaques*.
 - **Diagrammes de guitare** calculés pour n'importe quel accord, positions
-  ouvertes quand elles existent, barrés sinon.
+  ouvertes quand elles existent, barrés sinon. **Clique un accord** dans les
+  paroles : jusqu'à trois façons de le plaquer, et les notes en clair.
 - **Défilement automatique** à vitesse réglable, pour jouer sans lâcher
   l'instrument.
 - **Métronome** au tempo de la chanson.
@@ -64,6 +65,8 @@ personne n'ait besoin de passer par GitHub.
 - **Pistes audio** : enregistrement au micro (décompte de 4 temps, clic du
   métronome en option, vumètre), import de fichiers, étiquettes, repères posés
   dans la prise, lecture ralentie **sans changer la hauteur**.
+- **Version de référence** par chanson, déposée dans [`audio/`](audio/) :
+  tout le groupe l'entend dans l'app, et peut la garder hors-ligne.
 - **Impression** propre en A4 pour les pupitres.
 - **Hors-ligne** complet, et **export / import** en `.json` pour les sauvegardes.
 
@@ -138,6 +141,7 @@ réparable dans cinq ans.
 | `views3.js` | Panneau des pistes, enregistreur, lecteur |
 | `boot.js` | Démarrage, répertoire du groupe, service worker |
 | `repertoire.json` | Le répertoire partagé |
+| `audio/` | Les versions de référence du groupe |
 
 ## Mettre l'app à jour
 

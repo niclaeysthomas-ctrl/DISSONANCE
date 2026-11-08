@@ -189,7 +189,7 @@
   /** Diagramme SVG d'un accord, prêt à injecter. Corde de mi grave à gauche. */
   function diagram(token, opts) {
     opts = opts || {};
-    var f = fingering(token);
+    var f = opts.frets ? { frets: opts.frets, exact: opts.exact !== false, name: token } : fingering(token);
     var w = opts.width || 92, H = 112, pad = 12, top = 38;
     var head = '<svg class="dia" viewBox="0 0 ' + w + ' ' + H + '" width="' + w + '" height="' + H +
       '" role="img" aria-label="Accord ' + esc(token) + '">';
@@ -244,6 +244,64 @@
     return s + '</svg>';
   }
 
+
+  /* ---------- plusieurs positions, et les notes qu'on entend ---------- */
+
+  var CORDES = [4, 9, 2, 7, 11, 4];   // mi la ré sol si mi, de la 6e à la 1re
+  var FR = { C: 'Do', D: 'Ré', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' };
+
+  /** « A#m7 » → « La♯ ». */
+  function nomFr(pc, bemols) {
+    var n = spell(pc, bemols);
+    return FR[n[0]] + (n[1] === '#' ? '♯' : n[1] === 'b' ? '♭' : '');
+  }
+
+  /** Les notes réellement jouées par une position, de la plus grave à l'aiguë. */
+  function notesDe(frets, bemols) {
+    var vues = [], out = [];
+    for (var i = 0; i < 6; i++) {
+      if (frets[i] < 0) continue;
+      var pc = (CORDES[i] + frets[i]) % 12;
+      if (vues.indexOf(pc) !== -1) continue;
+      vues.push(pc);
+      out.push(nomFr(pc, bemols));
+    }
+    return out;
+  }
+
+  /** Jusqu'à trois façons de plaquer l'accord, de la plus basse à la plus haute. */
+  function positions(token) {
+    var c = parse(token);
+    if (!c) return [];
+    var fam = family(c.suffix);
+    var out = [];
+    var vus = [];
+    function pousser(frets, etiquette, rang) {
+      var cle = frets.join(',');
+      if (vus.indexOf(cle) !== -1) return;
+      vus.push(cle);
+      out.push({ frets: frets, etiquette: etiquette, exact: fam.exact, rang: rang });
+    }
+
+    var canonique = spell(c.root, c.flat) + c.suffix;
+    var autre = spell(c.root, !c.flat) + c.suffix;
+    if (OPEN[canonique]) pousser(OPEN[canonique], 'position de base', -1);
+    else if (OPEN[autre]) pousser(OPEN[autre], 'position de base', -1);
+
+    var fE = ((c.root - 4) % 12 + 12) % 12;
+    var fA = ((c.root - 9) % 12 + 12) % 12;
+    if (SHAPE_E[fam.k]) {
+      pousser(shift(SHAPE_E[fam.k], fE),
+        fE === 0 ? 'position ouverte' : 'barré case ' + fE + ', forme de mi', fE);
+    }
+    if (SHAPE_A[fam.k]) {
+      pousser(shift(SHAPE_A[fam.k], fA),
+        fA === 0 ? 'position ouverte' : 'barré case ' + fA + ', forme de la', fA);
+    }
+    out.sort(function (a, b) { return a.rang - b.rang; });
+    return out.slice(0, 3);
+  }
+
   function esc(t) {
     return String(t).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -253,7 +311,7 @@
   window.Chords = {
     parse: parse, isChord: isChord, spell: spell,
     transposeToken: transposeToken, transposeKey: transposeKey, prefersFlats: prefersFlats,
-    fingering: fingering, diagram: diagram,
+    fingering: fingering, diagram: diagram, positions: positions, notesDe: notesDe, nomFr: nomFr,
     SHARP: SHARP, FLAT: FLAT
   };
 })();

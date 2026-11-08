@@ -1,7 +1,7 @@
 /* sw.js — pour que l'app marche en cave, en van et sur scène.
    VERSION doit suivre celle des ?v= dans index.html : c'est ce qui livre
    les mises à jour au groupe. */
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 const CACHE = 'carnet-v' + VERSION;
 const COQUILLE = [
   './', './index.html',

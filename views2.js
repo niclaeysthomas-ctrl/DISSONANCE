@@ -444,6 +444,9 @@
       '<h2 class="sect">Et ensuite</h2>' +
       '<ul class="puces">' +
       '<li><b>Transposer</b> : les boutons − et + en haut de la chanson. Ça ne touche pas au texte, c’est juste l’affichage. « Figer » dans le menu ⋯ réécrit pour de bon.</li>' +
+      '<li><b>Un accord qui t’échappe ?</b> Clique dessus, dans les paroles comme dans le ' +
+      'bandeau du haut : la position s’affiche, jusqu’à trois façons de le plaquer, ' +
+      'et les notes qu’on entend.</li>' +
       '<li><b>Capo</b> : indique la case dans la fiche. Le bouton <i>capo</i> bascule entre les accords qui sonnent et ceux que tu plaques réellement.</li>' +
       '<li><b>Défiler</b> : le défilement automatique, avec sa vitesse réglable, pour jouer sans lâcher l’instrument.</li>' +
       '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue.</li>' +
@@ -469,6 +472,7 @@
       ligneTab('Un lien de chanson<br><span class="pt">menu ⋯ → Partager un lien</span>', 'Cette chanson-là, recopiée chez eux', 'Non — leur copie est figée') +
       ligneTab('Le répertoire du groupe<br><span class="pt">le fichier repertoire.json</span>', 'Tout ce que tu y mets', 'Elles arrivent toutes seules') +
       ligneTab('Une piste audio<br><span class="pt">⋯ → Exporter le fichier</span>', 'Le fichier, envoyé à la main', 'Non — c’est une copie') +
+      ligneTab('Une version de référence<br><span class="pt">déposée dans audio/</span>', 'Tout le groupe l’entend dans l’app', 'Elles arrivent toutes seules') +
       '</tbody></table></div>';
 
     h += '<h2 class="sect">Envoyer une chanson à quelqu’un</h2>' +
@@ -508,6 +512,16 @@
       'Un fichier audio ne rentre pas dans un lien, et il <b>n’est pas dans l’export .json</b>. ' +
       'Pour en faire écouter une : menu <b>⋯</b> de la piste → <i>Exporter le fichier</i>, ' +
       'puis envoie-le comme n’importe quel fichier. Compte à peu près <b>1 Mo la minute</b>.</p></div>' +
+
+      '<h2 class="sect">La version de référence</h2>' +
+      '<p class="aide">Une chanson du répertoire peut porter <b>une version qui fait foi</b> : ' +
+      'celle qu’on écoute avant la répète pour se remettre le morceau en tête. Elle s’affiche ' +
+      'en tête des pistes, se lit en ligne, et le bouton <b>⤓</b> la garde sur l’appareil ' +
+      'pour la cave.</p>' +
+      '<p class="aide">Pour en proposer une : menu <b>⋯</b> de ta piste → ' +
+      '<i>Proposer comme référence du groupe</i>. Il te donne le fichier à déposer et ' +
+      'le bloc à coller — un audio ne peut pas s’ajouter tout seul, il faut le poser ' +
+      'dans le dépôt.</p>' +
 
       '<h2 class="sect">L’installer, et jouer sans réseau</h2>' +
       '<ul class="puces">' +

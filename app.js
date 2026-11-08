@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var KEY = 'carnet.v1';
   var C = window.Chords;
 
@@ -157,16 +157,19 @@
         html += '<p class="indic">' + esc(b.texte) + '</p>';
       } else if (b.type === 'accords') {
         html += '<p class="ligne accords-seuls">' + b.mots.map(function (m) {
-          return C.isChord(m)
-            ? '<span class="ch">' + esc(transposeAccord(m, steps, flats)) + '</span>'
-            : '<span class="sep">' + esc(m) + '</span>';
+          if (!C.isChord(m)) return '<span class="sep">' + esc(m) + '</span>';
+          var a = esc(transposeAccord(m, steps, flats));
+          return '<span class="ch clic" data-ch="' + a + '" title="Voir la position">' + a + '</span>';
         }).join(' ') + '</p>';
       } else {
         var aAccords = b.paires.some(function (p) { return p.accord !== null; });
         html += '<p class="ligne' + (aAccords ? '' : ' sans-accords') + '">' + b.paires.map(function (p) {
           var ch = p.accord === null ? '' : esc(transposeAccord(p.accord, steps, flats));
           var tx = p.texte === '' ? ' ' : esc(p.texte);
-          return '<span class="paire"><span class="ch">' + ch + '</span><span class="tx">' + tx + '</span></span>';
+          var balise = ch
+            ? '<span class="ch clic" data-ch="' + ch + '" title="Voir la position">' + ch + '</span>'
+            : '<span class="ch"></span>';
+          return '<span class="paire">' + balise + '<span class="tx">' + tx + '</span></span>';
         }).join('') + '</p>';
       }
     });

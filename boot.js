@@ -33,7 +33,8 @@
       K.groupe = d.chansons.map(function (c, i) {
         var id = 'g:' + (c.id || slug(c.titre) || i);
         return Object.assign(K.nouvelleChanson(), c, {
-          id: id, transpose: 0, favori: !!fav[id], tags: c.tags || []
+          id: id, transpose: 0, favori: !!fav[id], tags: c.tags || [],
+          reference: c.reference || null
         });
       });
       // La vue a pu s'afficher avant l'arrivée du répertoire : on la refait,

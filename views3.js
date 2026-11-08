@@ -66,9 +66,10 @@
       var self = this;
       this.parties = parties || [];
       if (this.piste && this.piste.id === piste.id) { this.basculer(); return; }
-      if (this.url) URL.revokeObjectURL(this.url);
+      if (this.url && this.objet) URL.revokeObjectURL(this.url);
       this.piste = piste;
-      this.url = URL.createObjectURL(piste.blob);
+      this.objet = !!piste.blob;
+      this.url = piste.blob ? URL.createObjectURL(piste.blob) : piste.url;
       this.audio.src = this.url;
       this.appliquerVitesse();
       this.el.hidden = false;
@@ -132,6 +133,10 @@
 
     poserRepere: function () {
       if (!this.piste) return;
+      if (this.piste.distante) {
+        toast('Garde-la hors-ligne d’abord : un repère doit se ranger quelque part.');
+        return;
+      }
       var t = this.audio.currentTime;
       var deja = (this.piste.reperes || []).length;
       var defaut = this.parties[deja] || ('Repère ' + (deja + 1));
@@ -217,11 +222,20 @@
     if (!zone) return;
     P.lister(chanson.id).then(function (liste) {
       UI.comptes[chanson.id] = liste.length;
-      if (!liste.length) {
+      var ref = chanson.reference;
+      var dejaLa = ref && liste.filter(function (p) { return p.depot === ref.fichier; })[0];
+      var ligneRef = (ref && !dejaLa) ? '<li class="ref">' +
+        '<button class="lire" data-lireref="1" aria-label="Écouter">▶</button>' +
+        '<div class="pi"><b>' + esc(ref.nom || 'Version de référence') + '</b>' +
+        '<span class="m">référence du groupe · ' + (ref.duree ? P.mmss(ref.duree) + ' · ' : '') +
+        'en ligne</span></div>' +
+        '<button class="pmenu" data-dl="1" title="Garder hors-ligne">⤓</button></li>' : '';
+
+      if (!liste.length && !ligneRef) {
         zone.innerHTML = '<p class="indic">Aucune piste. Enregistre une idée, ou dépose un fichier déjà prêt.</p>';
         return;
       }
-      zone.innerHTML = '<ul class="liste-pistes">' + liste.map(function (p) {
+      zone.innerHTML = '<ul class="liste-pistes">' + ligneRef + liste.map(function (p) {
         return '<li>' +
           '<button class="lire" data-lire="' + p.id + '" aria-label="Écouter">▶</button>' +
           '<div class="pi"><b>' + esc(p.nom) + '</b><span class="m">' +
@@ -231,6 +245,17 @@
           '<button class="pmenu" data-pm="' + p.id + '" aria-label="Plus">⋯</button>' +
           '</li>';
       }).join('') + '</ul>';
+
+      var brRef = zone.querySelector('[data-lireref]');
+      if (brRef) brRef.onclick = function () {
+        Lec.jouer({
+          id: 'ref:' + ref.fichier, nom: ref.nom || 'Version de référence',
+          etiquette: 'référence du groupe', url: ref.fichier, duree: ref.duree || 0,
+          date: null, distante: true, reperes: []
+        }, parties);
+      };
+      var bdl = zone.querySelector('[data-dl]');
+      if (bdl) bdl.onclick = function () { garderHorsLigne(chanson, ref, parties, bdl); };
 
       zone.querySelectorAll('[data-lire]').forEach(function (b) {
         b.onclick = function () {
@@ -258,6 +283,7 @@
       '<button data-m="renommer">Renommer</button>' +
       '<button data-m="etiquette">Changer l’étiquette</button>' +
       '<button data-m="exporter">Exporter le fichier</button>' +
+      '<button data-m="reference">Proposer comme référence du groupe</button>' +
       '<button data-m="supprimer" class="danger">Supprimer</button>' +
       '<button data-m="" class="annuler">Annuler</button></div>';
     document.body.appendChild(f);
@@ -278,6 +304,8 @@
         } else if (a === 'exporter') {
           var nom = (p.nom || 'piste').replace(/[\/\\:*?"<>|]/g, '-') + '.' + P.extension(p.mime);
           K.telecharger(nom, p.blob, p.mime);
+        } else if (a === 'reference') {
+          proposerReference(p, chanson);
         } else if (a === 'supprimer') {
           if (!confirm('Supprimer « ' + p.nom + ' » ? L’enregistrement est perdu.')) return;
           P.supprimer(p.id).then(function () {
@@ -286,6 +314,79 @@
             UI.rafraichir(chanson, parties);
           });
         }
+      };
+    });
+  }
+
+
+  /* ------------------------------------------------------------- référence du groupe */
+
+  function garderHorsLigne(chanson, ref, parties, bouton) {
+    bouton.disabled = true;
+    bouton.textContent = '…';
+    fetch(ref.fichier, { cache: 'no-cache' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('introuvable');
+        return r.blob();
+      })
+      .then(function (blob) {
+        return P.dureeDe(blob).then(function (d) {
+          return P.ajouter({
+            id: K.uid(), chansonId: chanson.id,
+            nom: ref.nom || 'Version de référence',
+            etiquette: 'référence', depot: ref.fichier,
+            mime: blob.type || 'audio/mpeg', taille: blob.size,
+            duree: d || ref.duree || 0, date: Date.now(), blob: blob, reperes: []
+          });
+        });
+      })
+      .then(function () {
+        toast('Gardée sur l’appareil.');
+        UI.rafraichir(chanson, parties);
+      })
+      .catch(function () {
+        bouton.disabled = false;
+        bouton.textContent = '⤓';
+        toast('Téléchargement impossible — réseau ?');
+      });
+  }
+
+  // Comment faire entrer une prise dans le répertoire commun : il faut déposer
+  // un fichier, ce qu'aucun lien ne sait faire tout seul.
+  function proposerReference(p, chanson) {
+    var d = K.depot;
+    var fichier = 'audio/' + (p.nom || 'reference').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.' + P.extension(p.mime);
+    var bloc = JSON.stringify({
+      fichier: fichier, nom: p.nom, duree: Math.round(p.duree || 0)
+    }, null, 2);
+
+    var f = document.createElement('div');
+    f.className = 'feuille';
+    f.innerHTML = '<div class="voile"></div><div class="menu fiche" style="text-align:left">' +
+      '<p class="mt">Proposer comme référence</p>' +
+      '<p class="enr-txt">Une piste du répertoire est un vrai fichier dans le dépôt. ' +
+      'Trois gestes, dans l’ordre :</p>' +
+      '<ol class="puces etapes">' +
+      '<li>Récupère le fichier.<br><button class="b" data-r="exp">Exporter ' + esc(fichier.split('/').pop()) + '</button></li>' +
+      '<li>Dépose-le dans le dossier <code>audio/</code> du dépôt.' +
+      (d ? '<br><a class="b" href="https://github.com/' + esc(d.owner) + '/' + esc(d.repo) +
+        '/upload/main/audio" target="_blank" rel="noopener">Ouvrir la page de dépôt</a>' : '') + '</li>' +
+      '<li>Ajoute ce bloc à la chanson dans <code>repertoire.json</code>, sous la clé <code>reference</code>.' +
+      '<br><button class="b" data-r="json">Copier le bloc</button></li>' +
+      '</ol>' +
+      '<pre class="code">' + esc(bloc) + '</pre>' +
+      '<button class="annuler" data-r="">Fermer</button></div>';
+    document.body.appendChild(f);
+    var fermer = function () { f.remove(); };
+    f.querySelector('.voile').onclick = fermer;
+    f.querySelectorAll('[data-r]').forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.r;
+        if (a === 'exp') K.telecharger(fichier.split('/').pop(), p.blob, p.mime);
+        else if (a === 'json') K.copier(bloc).then(function (ok) { toast(ok ? 'Bloc copié.' : 'Copie impossible.'); });
+        else fermer();
       };
     });
   }
@@ -473,6 +574,56 @@
 
     ecranPret();
   }
+
+
+  /* ------------------------------------------------------------- fiche d'accord */
+
+  // Un accord cliqué, où qu'il soit : dans les paroles, dans la grille ou
+  // dans le bandeau du haut.
+  document.addEventListener('click', function (e) {
+    var cible = e.target.closest ? e.target.closest('[data-ch]') : null;
+    if (!cible) return;
+    e.preventDefault();
+    ficheAccord(cible.dataset.ch);
+  });
+
+  function ficheAccord(token) {
+    var C = window.Chords;
+    var pos = C.positions(token);
+    var c = C.parse(token);
+    var f = document.createElement('div');
+    f.className = 'feuille';
+
+    var corps;
+    if (!pos.length) {
+      corps = '<p class="enr-txt">Cet accord n’est pas dans mes formes. ' +
+        'À toi de le montrer aux autres.</p>';
+    } else {
+      var notes = C.notesDe(pos[0].frets, c && c.flat);
+      corps = '<div class="fiche-pos">' + pos.map(function (p) {
+        return '<figure>' + C.diagram(token, { width: 116, frets: p.frets, exact: p.exact }) +
+          '<figcaption>' + esc(p.etiquette) + '</figcaption></figure>';
+      }).join('') + '</div>' +
+        (notes.length ? '<p class="fiche-notes">' + notes.map(function (n) {
+          return '<span>' + esc(n) + '</span>';
+        }).join('') + '</p>' : '') +
+        (pos[0].exact ? '' : '<p class="enr-note">Forme approchée : la couleur exacte de l’accord n’existe pas en position simple.</p>') +
+        '<p class="fiche-aide">× corde étouffée · ○ corde à vide · la barre, c’est l’index à plat</p>';
+    }
+
+    f.innerHTML = '<div class="voile"></div><div class="menu fiche">' +
+      '<p class="fiche-nom">' + esc(token) + '</p>' + corps +
+      '<button class="annuler" data-fermer>Fermer</button></div>';
+    document.body.appendChild(f);
+    var fermer = function () { f.remove(); };
+    f.querySelector('.voile').onclick = fermer;
+    f.querySelector('[data-fermer]').onclick = fermer;
+    document.addEventListener('keydown', function esc2(ev) {
+      if (ev.key === 'Escape') { fermer(); document.removeEventListener('keydown', esc2); }
+    });
+  }
+
+  UI.ficheAccord = ficheAccord;
 
   UI.Lecteur = Lec;
 

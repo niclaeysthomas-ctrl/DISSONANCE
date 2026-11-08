@@ -231,7 +231,10 @@
 
     var accords = K.accordsUtilises(s, steps);
     if (state.reglages.diagrammes && accords.length) {
-      h += '<div class="diagrammes">' + accords.map(function (a) { return C.diagram(a); }).join('') + '</div>';
+      h += '<div class="diagrammes">' + accords.map(function (a) {
+        return '<button class="dia-b" data-ch="' + esc(a) + '" title="Voir les positions de ' + esc(a) + '">' +
+          C.diagram(a) + '</button>';
+      }).join('') + '</div>';
     }
 
     h += '<article class="chanson" id="corps">' + K.rendu(s, steps) + '</article>';

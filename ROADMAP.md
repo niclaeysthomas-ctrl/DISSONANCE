@@ -45,11 +45,11 @@ c'est sur ton téléphone, donc à exporter de temps en temps.
 
 ---
 
-## 📨 Étape 3 — Faire circuler l'audio, sans serveur
+## ✅ Étape 3 — Faire circuler l'audio, sans serveur
 
-*Prochaine étape.* L'export d'une piste en fichier marche déjà ; ce qui manque,
-c'est la **version de référence déposée dans le dépôt**, que tout le monde aurait
-sans rien faire.
+*En ligne.* L'export d'une piste en fichier, et la **version de référence**
+déposée dans `audio/` : elle s'affiche en tête des pistes de la chanson, se lit
+en ligne, et le bouton ⤓ la range sur l'appareil pour la cave de répète.
 
 - **Exporter une prise** en fichier : ça part dans la conversation du groupe.
 - **Version de référence dans le dépôt** : une ou deux par chanson, en format
@@ -73,8 +73,8 @@ d'argent.
   plus rien de public.
 - **Ou rien** : on reste au fichier envoyé à la main.
 
-Mon conseil : ne pas y toucher avant d'avoir vécu avec les étapes 1 à 3. Il y a
-de bonnes chances que ça suffise.
+Mon conseil : ne pas y toucher avant d'avoir vécu avec les étapes 1 à 3, qui
+sont maintenant toutes en ligne. Il y a de bonnes chances que ça suffise.
 
 ---
 
