@@ -389,6 +389,16 @@
   /* ------------------------------------------------------------- aide */
 
   Vues.aide = function () {
+    var onglet = V.route().params.onglet === 'partager' ? 'partager' : 'ecrire';
+    var h = '<h1 class="h1">Mode d’emploi</h1>' +
+      '<div class="onglets">' +
+      '<a class="onglet' + (onglet === 'ecrire' ? ' actif' : '') + '" href="#/aide">Écrire une chanson</a>' +
+      '<a class="onglet' + (onglet === 'partager' ? ' actif' : '') + '" href="#/aide/partager">Partager au groupe</a>' +
+      '</div>';
+    app.innerHTML = h + (onglet === 'partager' ? aidePartager() : aideEcrire());
+  };
+
+  function aideEcrire() {
     var exemple = [
       '## Couplet 1',
       '[Am]Le texte va comme ça, [F]l’accord tombe sur la syllabe',
@@ -402,8 +412,7 @@
       'Am  F  C  G'
     ].join('\n');
 
-    app.innerHTML = '<h1 class="h1">Écrire une chanson</h1>' +
-      '<p class="aide">Quatre règles, et c’est tout.</p>' +
+    return '<p class="aide">Quatre règles, et c’est tout.</p>' +
       '<div class="regles">' +
       regle('[Am]', 'Un accord', 'Entre crochets, collé à la syllabe où il tombe. <code>[Am]Le texte</code>.') +
       regle('##', 'Une partie', 'Une ligne qui commence par <code>##</code> : couplet, refrain, pont, solo.') +
@@ -417,12 +426,75 @@
       '<ul class="puces">' +
       '<li><b>Transposer</b> : les boutons − et + en haut de la chanson. Ça ne touche pas au texte, c’est juste l’affichage. « Figer » dans le menu ⋯ réécrit pour de bon.</li>' +
       '<li><b>Capo</b> : indique la case dans la fiche. Le bouton <i>capo</i> bascule entre les accords qui sonnent et ceux que tu plaques réellement.</li>' +
-      '<li><b>Partager</b> : menu ⋯ → <i>Partager un lien</i>. La chanson entière tient dans l’adresse, pas besoin de compte.</li>' +
-      '<li><b>Le répertoire du groupe</b> : les chansons communes, versionnées dans le dépôt. Menu ⋯ → <i>Proposer au répertoire</i>.</li>' +
-      '<li><b>Hors-ligne</b> : une fois l’app ouverte une fois, elle marche sans réseau. Ajoute-la à ton écran d’accueil.</li>' +
+      '<li><b>Défiler</b> : le défilement automatique, avec sa vitesse réglable, pour jouer sans lâcher l’instrument.</li>' +
+      '<li><b>Setlists</b> : l’ordre des morceaux d’une répète ou d’un concert, avec précédent / suivant pendant qu’on joue.</li>' +
       '</ul>' +
-      '<p class="centre"><a class="btn primaire" href="#/nouveau">Écrire une chanson</a></p>';
-  };
+      '<p class="centre"><a class="btn primaire" href="#/nouveau">Écrire une chanson</a> ' +
+      '<a class="btn" href="#/aide/partager">Comment on partage →</a></p>';
+  }
+
+  function aidePartager() {
+    var h = '';
+
+    h += '<div class="encart"><p><b>Tes chansons ne quittent pas ton téléphone.</b> ' +
+      'Il n’y a pas de serveur et pas de compte : tout ce que tu écris reste dans le navigateur ' +
+      'de cet appareil. Personne ne le voit tant que tu n’as rien fait pour. ' +
+      'Et donc : rien ne se synchronise tout seul — c’est à toi d’envoyer.</p></div>';
+
+    h += '<h2 class="sect">Trois façons de partager</h2>';
+    h += '<div class="tableau"><table>' +
+      '<thead><tr><th>Ce que tu envoies</th><th>Ce qu’ils voient</th><th>Tes corrections ensuite</th></tr></thead><tbody>' +
+      ligneTab('Le lien de l’app', 'Le répertoire du groupe, rien de personnel', 'Elles arrivent toutes seules') +
+      ligneTab('Un lien de chanson<br><span class="pt">menu ⋯ → Partager un lien</span>', 'Cette chanson-là, recopiée chez eux', 'Non — leur copie est figée') +
+      ligneTab('Le répertoire du groupe<br><span class="pt">le fichier repertoire.json</span>', 'Tout ce que tu y mets', 'Elles arrivent toutes seules') +
+      '</tbody></table></div>';
+
+    h += '<h2 class="sect">Envoyer une chanson à quelqu’un</h2>' +
+      '<p class="aide">Ouvre la chanson, menu <b>⋯</b> → <b>Partager un lien</b>. La chanson entière ' +
+      'tient dans l’adresse : celui qui clique l’ajoute à son carnet d’un bouton, sans rien installer. ' +
+      'Pratique pour « tiens, écoute celle-là » — mais si tu corriges un accord après coup, ' +
+      'il garde l’ancienne version. Renvoie-lui un lien, ou passe par le répertoire.</p>';
+
+    h += '<h2 class="sect">Mettre une chanson dans le répertoire du groupe</h2>' +
+      '<p class="aide">C’est le vrai répertoire commun : tout le monde l’a en ouvrant l’app, ' +
+      'et vos corrections suivent.</p>' +
+      '<ol class="puces">' +
+      '<li>Ouvre la chanson, menu <b>⋯</b> → <b>Proposer au répertoire du groupe</b>.</li>' +
+      '<li>Ça ouvre une page GitHub déjà remplie — il n’y a plus qu’à envoyer.</li>' +
+      '<li>Celui qui tient le dépôt valide, et la chanson apparaît chez tout le monde ' +
+      'à la prochaine ouverture avec du réseau.</li>' +
+      '</ol>';
+
+    h += '<div class="encart attention"><p><b>Attention à ce que veut dire « partagé ».</b> ' +
+      'Le dépôt est public : ce qui entre dans le répertoire du groupe est lisible ' +
+      '<i>par n’importe qui sur internet</i>, pas seulement par nous. ' +
+      'Pour un morceau pas fini ou qu’on garde pour soi, reste sur le lien de chanson à chanson.</p></div>';
+
+    h += '<h2 class="sect">L’installer, et jouer sans réseau</h2>' +
+      '<ul class="puces">' +
+      '<li>Ouvre le lien, puis dans le menu du navigateur : <b>« Ajouter à l’écran d’accueil »</b>. ' +
+      'Ça devient une app, avec son icône.</li>' +
+      '<li>Une fois ouverte une première fois, elle <b>marche sans réseau</b> — en cave de répète ' +
+      'comme en coulisses. Le répertoire du groupe se remet à jour dès qu’il y a du réseau.</li>' +
+      '</ul>';
+
+    h += '<h2 class="sect">Ne pas perdre ses chansons</h2>' +
+      '<p class="aide">Elles vivent dans le navigateur : si tu en vides les données, ou si tu changes ' +
+      'de téléphone, elles partent avec. Prends l’habitude d’aller dans ' +
+      '<a href="#/reglages">Réglages → <b>Exporter tout (.json)</b></a> de temps en temps, ' +
+      'et garde le fichier quelque part. Le même écran sait le relire.</p>';
+
+    h += '<p class="centre"><a class="btn primaire" href="#/">Retour au carnet</a> ' +
+      '<a class="btn" href="#/aide">Comment écrire une chanson →</a></p>';
+    return h;
+  }
+
+  function ligneTab(a, b, c) {
+    // Les libellés servent d'intitulés quand la table s'empile sur téléphone.
+    return '<tr><td data-l="Ce que tu envoies"><b>' + a + '</b></td>' +
+      '<td data-l="Ce qu’ils voient">' + b + '</td>' +
+      '<td data-l="Tes corrections ensuite">' + c + '</td></tr>';
+  }
 
   function regle(sym, titre, texte) {
     return '<div class="regle"><code class="sym">' + sym + '</code><div><b>' + titre + '</b><p>' + texte + '</p></div></div>';

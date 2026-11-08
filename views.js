@@ -39,7 +39,7 @@
     }
     if (seg[0] === 'sets') return { nom: 'setlists', params: q };
     if (seg[0] === 'reglages') return { nom: 'reglages', params: q };
-    if (seg[0] === 'aide') return { nom: 'aide', params: q };
+    if (seg[0] === 'aide') { q.onglet = seg[1] || 'ecrire'; return { nom: 'aide', params: q }; }
     if (seg[0] === 'nouveau') return { nom: 'editeur', params: { id: 'new' } };
     return { nom: 'bib', params: q };
   }
@@ -61,6 +61,8 @@
     };
     document.getElementById('topnav').innerHTML = route.nom === 'bib'
       ? '<a class="tbtn" href="#/sets">Setlists</a>' +
+        '<a class="tbtn" href="#/aide" title="Mode d’emploi">' +
+        '<span class="long">Mode d’emploi</span><span class="court">?</span></a>' +
         '<a class="tbtn" href="#/reglages" title="Réglages">⚙</a>'
       : '';
   }

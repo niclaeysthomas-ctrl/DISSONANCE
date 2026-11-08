@@ -93,6 +93,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: 14px; color: var(--doux); border: 1px solid transparent;
 }
 .tbtn:hover { background: var(--fond-3); color: var(--texte); }
+.tbtn .court { display: none; }
+@media (max-width: 520px) {
+  .tbtn .long { display: none; }
+  .tbtn .court { display: inline; font-size: 16px; line-height: 1; }
+}
 
 main { max-width: 860px; margin: 0 auto; padding: 18px 16px 96px; }
 
@@ -121,7 +126,9 @@ main { max-width: 860px; margin: 0 auto; padding: 18px 16px 96px; }
 .onglet {
   border: 0; background: none; cursor: pointer; white-space: nowrap;
   padding: 7px 13px; border-radius: 999px; font-size: 14px; color: var(--doux);
+  text-decoration: none; display: inline-block;
 }
+.onglet:hover { color: var(--texte); }
 .onglet.actif { background: var(--accent-doux); color: var(--accent); font-weight: 600; }
 .pastille { opacity: .55; font-variant-numeric: tabular-nums; }
 
@@ -376,6 +383,47 @@ code { font-family: var(--mono); font-size: .9em; background: var(--fond-3); pad
 .apercu-import { margin-top: 20px; }
 .apercu-import summary { cursor: pointer; color: var(--doux); font-size: 14px; }
 .apercu-import h3 { font-size: 16px; margin: 18px 0 6px; }
+
+/* ------------------------------------------------------------- mode d'emploi */
+
+.encart {
+  background: var(--fond-2); border: 1px solid var(--trait);
+  border-left: 3px solid var(--accent); border-radius: var(--rayon);
+  padding: 14px 18px; margin: 16px 0;
+}
+.encart p { margin: 0; font-size: 14.5px; line-height: 1.55; }
+.encart.attention { border-left-color: var(--rouge); }
+.encart.attention b { color: var(--rouge); }
+
+.tableau { overflow-x: auto; margin: 10px 0 4px; }
+.tableau table {
+  width: 100%; min-width: 440px; border-collapse: collapse;
+  background: var(--fond-2); border: 1px solid var(--trait);
+  border-radius: var(--rayon); overflow: hidden; font-size: 14px;
+}
+.tableau th {
+  text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--doux); font-weight: 600; padding: 10px 14px;
+  border-bottom: 1px solid var(--trait); background: var(--fond-3);
+}
+.tableau td { padding: 12px 14px; vertical-align: top; border-bottom: 1px solid var(--trait); }
+.tableau tr:last-child td { border-bottom: 0; }
+.tableau .pt { font-size: 12.5px; color: var(--doux); font-weight: 400; }
+@media (max-width: 620px) {
+  .tableau table { min-width: 0; }
+  .tableau thead { display: none; }
+  .tableau tr { display: block; border-bottom: 1px solid var(--trait); padding: 8px 0 12px; }
+  .tableau tr:last-child { border-bottom: 0; }
+  .tableau td { display: block; border: 0; padding: 3px 14px; }
+  .tableau td::before {
+    content: attr(data-l); display: block; font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--doux); margin-bottom: 1px;
+  }
+  .tableau td:first-child::before { display: none; }
+  .tableau td:first-child { padding-bottom: 7px; }
+}
+ol.puces { padding-left: 22px; }
+ol.puces li { margin-bottom: 9px; }
 
 /* ------------------------------------------------------------- papier */
 

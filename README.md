@@ -16,6 +16,11 @@ que les caves de répétition n'ont jamais eu de 4G.
    tient dans l'adresse — celui qui clique l'ajoute à son carnet d'un bouton.
    Pas de compte, pas d'inscription, rien.
 
+> **Important :** envoyer le lien de l'app ne partage *pas* tes chansons. Elles
+> restent sur ton téléphone. Pour que tout le groupe les voie, il faut les
+> mettre dans le répertoire commun — c'est expliqué dans l'app, onglet
+> **Mode d'emploi → Partager au groupe**.
+
 ## Écrire une chanson
 
 Quatre règles, et c'est tout :
@@ -40,7 +45,10 @@ Am  F  C  G
 | `> doucement` | Une indication pour le groupe (nuance, arrangement) |
 | `Am  F  C  G` | Une ligne d'accords seuls — reconnue toute seule |
 
-L'aide est aussi dans l'app : **Réglages → Comment écrire une chanson**.
+L'aide est aussi dans l'app, en haut de l'écran : **Mode d'emploi**. Elle a deux
+onglets — *Écrire une chanson* pour la syntaxe, et *Partager au groupe* pour
+savoir qui voit quoi. Tout ce qui est expliqué ici est là-bas aussi, pour que
+personne n'ait besoin de passer par GitHub.
 
 ## Ce qu'il y a dedans
 

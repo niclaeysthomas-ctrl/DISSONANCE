@@ -1,5 +1,5 @@
 /* sw.js — pour que l'app marche en cave, en van et sur scène. */
-const CACHE = 'carnet-v1.0.0';
+const CACHE = 'carnet-v1.1.0';
 const COQUILLE = [
   './', './index.html', './styles.css', './chords.js', './app.js', './views.js', './views2.js',
   './boot.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
